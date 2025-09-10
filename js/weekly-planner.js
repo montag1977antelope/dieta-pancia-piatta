@@ -1,4 +1,41 @@
-// Logica per il piano settimanale
+// Renderizza alimenti del pasto
+function renderMealItems(mealItems) {
+    if (!mealItems || mealItems.length === 0) {
+        return '<div class="empty-meal">Nessun alimento</div>';
+    }
+    
+    return mealItems.map(item => {
+        // Gestisci sia il formato con 'id' che con 'quantity'
+        const foodId = item.id || item;
+        const quantity = item.quantity || item.porzione_standard || 100;
+        
+        const food = getFoodById(foodId);
+        if (!food) {
+            console.warn('Alimento non trovato:', foodId); // Debug
+            return '';
+        }
+        
+        // Prepara le alternative se esistono
+        let alternativesHtml = '';
+        if (item.alternatives && item.alternatives.length > 0) {
+            const altNames = item.alternatives.map(altId => {
+                const altFood = getFoodById(altId);
+                return altFood ? altFood.nome : altId;
+            }).join(', ');
+            alternativesHtml = `<span style="color: var(--text-secondary); font-size: 0.75rem; display: block;">Alt: ${altNames}</span>`;
+        }
+        
+        return `
+            <div class="meal-item">
+                <div style="flex: 1;">
+                    <span class="meal-item-name">${food.nome}</span>
+                    ${alternativesHtml}
+                </div>
+                <span class="meal-item-info">${quantity}${food.unita_misura || 'g'}</span>
+            </div>
+        `;
+    }).join('');
+}// Logica per il piano settimanale
 let currentWeekOffset = 0;
 let currentEditingMeal = null;
 let selectedFoods = [];
