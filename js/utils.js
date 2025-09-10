@@ -1,310 +1,94 @@
-// Funzioni di utilità per l'app Dieta Pancia Piatta
+// /js/utils.js — funzioni condivise (globali)
+function debounce(fn, wait=300){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), wait); }; }
+function todayISO(d=new Date()){ const tz=d.getTimezoneOffset(); return new Date(d - tz*60000).toISOString().slice(0,10); }
 
-// === Calcoli Nutrizionali ===
+// Accesso DB (usiamo ciò che espone database.js)
+function getDB(){
+  if (typeof loadDatabase === 'function') return loadDatabase();
+  if (typeof dietaDB !== 'undefined') return dietaDB;
+  console.error('DB non caricato'); return { categorie:{} };
+}
 
-// Calcola valori nutrizionali per una porzione specifica
-function calculateNutritionForPortion(food, portion) {
-    const multiplier = portion / 100;
-    
-    // Se l'alimento ha valori per unità invece che per 100g
-    if (food.calorie_per_unita) {
-        const units = portion / (food.porzione_standard || 1);
-        return {
-            calories: (food.calorie_per_unita || 0) * units,
-            proteins: (food.proteine_per_unita || 0) * units,
-            fats: (food.grassi_per_unita || 0) * units,
-            carbs: (food.carboidrati_per_unita || 0) * units,
-            fiber: (food.fibre_per_unita || 0) * units
-        };
+// Cerca alimento per id in tutte le categorie
+function getFoodById(foodId){
+  const db = getDB();
+  for (const [catId, catData] of Object.entries(db.categorie||{})) {
+    const f = (catData.alimenti||[]).find(x => x.id === foodId);
+    if (f) return { ...f, categoriaId: catId, categoriaNome: catData.nome };
+  }
+  return null;
+}
+
+// Ricerca alimenti per testo (opz. per categoria)
+function searchFoods(term='', category=null){
+  const db = getDB(); const t = String(term).toLowerCase();
+  const res = [];
+  for (const [catId, cat] of Object.entries(db.categorie||{})){
+    if (category && catId !== category) continue;
+    for (const f of (cat.alimenti||[])){
+      if (!t || f.nome.toLowerCase().includes(t) || f.id.toLowerCase().includes(t)){
+        res.push({ ...f, categoriaId: catId, categoriaNome: cat.nome });
+      }
     }
-    
-    // Calcolo standard per 100g
+  }
+  return res;
+}
+
+// Calcolo nutrienti per porzione (supporta per-100g, per-100ml, per-unità/fetta)
+function calculateNutritionForPortion(food, portion){
+  // per-unità
+  if (food.calorie_per_unita || food.calorie_per_fetta){
+    const perUnit = (food.porzione_standard || 1);
+    const units = portion / perUnit;
+    const pick = (g,u,f)=> g ?? u ?? f ?? 0;
     return {
-        calories: (food.calorie_per_100g || 0) * multiplier,
-        proteins: (food.proteine_per_100g || 0) * multiplier,
-        fats: (food.grassi_per_100g || 0) * multiplier,
-        carbs: (food.carboidrati_per_100g || 0) * multiplier,
-        fiber: (food.fibre_per_100g || 0) * multiplier,
-        sugars: (food.zuccheri_per_100g || 0) * multiplier,
-        sodium: (food.sodio_per_100g || 0) * multiplier
+      calories: pick(food.calorie_per_unita, food.calorie_per_fetta)*units,
+      proteins: pick(food.proteine_per_unita, food.proteine_per_fetta)*units,
+      fats:     pick(food.grassi_per_unita,   food.grassi_per_fetta)*units,
+      carbs:    pick(food.carboidrati_per_unita, food.carboidrati_per_fetta)*units,
+      fiber:    pick(food.fibre_per_unita, food.fibra_per_unita),
+      sugars:   pick(food.zuccheri_per_unita, 0)
     };
+  }
+
+  // per-100 (g/ml)
+  const isMl = food.unita_misura && String(food.unita_misura).toLowerCase().includes('ml');
+  const mult = portion / 100;
+  const kcalKey = isMl ? 'calorie_per_100ml' : 'calorie_per_100g';
+  const protKey = isMl ? 'proteine_per_100ml' : 'proteine_per_100g';
+  const fatKey  = isMl ? 'grassi_per_100ml'   : 'grassi_per_100g';
+  const carbKey = isMl ? 'carboidrati_per_100ml' : 'carboidrati_per_100g';
+  const fibKey  = isMl ? 'fibre_per_100ml'    : 'fibre_per_100g';
+  const sugKey  = isMl ? 'zuccheri_per_100ml' : 'zuccheri_per_100g';
+
+  return {
+    calories: (food[kcalKey] || 0) * mult,
+    proteins: (food[protKey] || 0) * mult,
+    fats:     (food[fatKey]  || 0) * mult,
+    carbs:    (food[carbKey] || 0) * mult,
+    fiber:    (food[fibKey]  || 0) * mult,
+    sugars:   (food[sugKey]  || 0) * mult
+  };
 }
 
-// Calcola le calorie dai macronutrienti
-function calculateCaloriesFromMacros(proteins, fats, carbs) {
-    return (proteins * 4) + (fats * 9) + (carbs * 4);
+// Validazione coerenza macro → kcal (4/9/4)
+function validateMacroCalories(kcal, p, f, c){
+  const calc = (p*4) + (f*9) + (c*4);
+  const diff = Math.abs(calc - (kcal||0));
+  return { isValid: diff <= Math.max(30, kcal*0.05), difference: (calc-(kcal||0)), calculatedCalories: calc };
 }
 
-// Verifica coerenza tra calorie dichiarate e calcolate
-function validateMacroCalories(calories, proteins, fats, carbs, tolerance = 5) {
-    const calculatedCalories = calculateCaloriesFromMacros(proteins, fats, carbs);
-    const difference = Math.abs(calculatedCalories - calories);
-    const percentDifference = (difference / calories) * 100;
-    
-    return {
-        isValid: percentDifference <= tolerance,
-        calculatedCalories,
-        difference,
-        percentDifference
-    };
+// Percentuali macro rispetto alle kcal totali
+function calculateMacroPercentages(kcal, p, f, c){
+  const calc = (p*4)+(f*9)+(c*4); const base = kcal || calc || 1;
+  const pct = x => ((x/base)*100).toFixed(1);
+  return { proteins: pct(p*4), fats: pct(f*9), carbs: pct(c*4) };
 }
 
-// Calcola percentuali di macronutrienti
-function calculateMacroPercentages(calories, proteins, fats, carbs) {
-    if (calories === 0) return { proteins: 0, fats: 0, carbs: 0 };
-    
-    return {
-        proteins: ((proteins * 4) / calories * 100).toFixed(1),
-        fats: ((fats * 9) / calories * 100).toFixed(1),
-        carbs: ((carbs * 4) / calories * 100).toFixed(1)
-    };
-}
-
-// === Gestione Pasti ===
-
-// Genera ID univoco per pasto
-function generateMealId() {
-    return `meal_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-}
-
-// Ottieni nome italiano del pasto
-function getMealNameInItalian(mealType) {
-    const mealNames = {
-        breakfast: 'Colazione',
-        snack1: 'Spuntino Mattina',
-        lunch: 'Pranzo',
-        snack2: 'Spuntino Pomeriggio',
-        dinner: 'Cena'
-    };
-    return mealNames[mealType] || mealType;
-}
-
-// === Ricerca e Filtri ===
-
-// Cerca alimenti nel database
-function searchFoods(searchTerm, category = null) {
-    const results = [];
-    const term = searchTerm.toLowerCase();
-    
-    Object.entries(dietaDB.categorie).forEach(([catId, catData]) => {
-        if (category && catId !== category) return;
-        
-        catData.alimenti.forEach(food => {
-            if (food.nome.toLowerCase().includes(term) || 
-                food.id.toLowerCase().includes(term)) {
-                results.push({
-                    ...food,
-                    categoriaId: catId,
-                    categoriaNome: catData.nome
-                });
-            }
-        });
-    });
-    
-    return results;
-}
-
-// Ottieni alimento per ID
-function getFoodById(foodId) {
-    for (const [catId, catData] of Object.entries(dietaDB.categorie)) {
-        const food = catData.alimenti.find(f => f.id === foodId);
-        if (food) {
-            return {
-                ...food,
-                categoriaId: catId,
-                categoriaNome: catData.nome
-            };
-        }
-    }
-    return null;
-}
-
-// === Formattazione e Display ===
-
-// Formatta numero con decimali
-function formatNumber(num, decimals = 1) {
-    return Number(num).toFixed(decimals);
-}
-
-// Formatta data in italiano
-function formatDateItalian(date) {
-    const options = { 
-        day: 'numeric', 
-        month: 'long', 
-        year: 'numeric' 
-    };
-    return date.toLocaleDateString('it-IT', options);
-}
-
-// Formatta orario
-function formatTime(date) {
-    return date.toLocaleTimeString('it-IT', { 
-        hour: '2-digit', 
-        minute: '2-digit' 
-    });
-}
-
-// === Storage e Persistenza ===
-
-// Salva dati con timestamp
-function saveToStorage(key, data) {
-    const dataWithTimestamp = {
-        data: data,
-        timestamp: new Date().toISOString()
-    };
-    localStorage.setItem(key, JSON.stringify(dataWithTimestamp));
-}
-
-// Carica dati con verifica timestamp
-function loadFromStorage(key, maxAgeHours = 24) {
-    const stored = localStorage.getItem(key);
-    if (!stored) return null;
-    
-    try {
-        const parsed = JSON.parse(stored);
-        const storedTime = new Date(parsed.timestamp);
-        const now = new Date();
-        const hoursDiff = (now - storedTime) / (1000 * 60 * 60);
-        
-        if (hoursDiff <= maxAgeHours) {
-            return parsed.data;
-        }
-    } catch (e) {
-        console.error('Error loading from storage:', e);
-    }
-    
-    return null;
-}
-
-// === Validazione ===
-
-// Valida input numerico
-function validateNumber(value, min = 0, max = Infinity) {
-    const num = parseFloat(value);
-    return !isNaN(num) && num >= min && num <= max;
-}
-
-// Valida dati alimento
-function validateFoodData(foodData) {
-    const errors = [];
-    
-    if (!foodData.nome || foodData.nome.trim() === '') {
-        errors.push('Nome alimento obbligatorio');
-    }
-    
-    if (!foodData.categoria) {
-        errors.push('Categoria obbligatoria');
-    }
-    
-    if (!validateNumber(foodData.porzione_standard, 0.1)) {
-        errors.push('Porzione standard non valida');
-    }
-    
-    if (!validateNumber(foodData.calorie_per_100g, 0)) {
-        errors.push('Calorie non valide');
-    }
-    
-    // Verifica coerenza macro
-    const macroCheck = validateMacroCalories(
-        foodData.calorie_per_100g,
-        foodData.proteine_per_100g || 0,
-        foodData.grassi_per_100g || 0,
-        foodData.carboidrati_per_100g || 0
-    );
-    
-    if (!macroCheck.isValid) {
-        errors.push(`Calorie e macronutrienti non coerenti (differenza: ${macroCheck.percentDifference.toFixed(1)}%)`);
-    }
-    
-    return {
-        isValid: errors.length === 0,
-        errors
-    };
-}
-
-// === Export/Import ===
-
-// Esporta database in JSON
-function exportDatabase() {
-    const dataStr = JSON.stringify(dietaDB, null, 2);
-    const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
-    
-    const exportName = `dieta_database_${formatDate(new Date())}.json`;
-    
-    const linkElement = document.createElement('a');
-    linkElement.setAttribute('href', dataUri);
-    linkElement.setAttribute('download', exportName);
-    linkElement.click();
-}
-
-// Importa database da file
-function importDatabase(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        
-        reader.onload = function(e) {
-            try {
-                const imported = JSON.parse(e.target.result);
-                // Valida struttura base
-                if (imported.categorie && imported.metadata) {
-                    resolve(imported);
-                } else {
-                    reject(new Error('Formato file non valido'));
-                }
-            } catch (err) {
-                reject(new Error('Errore parsing JSON: ' + err.message));
-            }
-        };
-        
-        reader.onerror = function() {
-            reject(new Error('Errore lettura file'));
-        };
-        
-        reader.readAsText(file);
-    });
-}
-
-// === Statistiche ===
-
-// Calcola statistiche periodo
-function calculatePeriodStats(meals, startDate, endDate) {
-    const stats = {
-        totalDays: 0,
-        averageCalories: 0,
-        averageProteins: 0,
-        averageFats: 0,
-        averageCarbs: 0,
-        adherenceDays: 0,
-        totalMeals: 0
-    };
-    
-    // Implementazione calcoli statistiche
-    // ...
-    
-    return stats;
-}
-
-// === Utility Generiche ===
-
-// Deep clone oggetto
-function deepClone(obj) {
-    return JSON.parse(JSON.stringify(obj));
-}
-
-// Debounce function
-function debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
-}
-
-// Formatta date per input
-function formatDateForInput(date) {
-    return date.toISOString().split('T')[0];
-}
+// Export in window per uso in altri script non-modulari
+window.DietUtils = {
+  debounce, todayISO,
+  getFoodById, searchFoods,
+  calculateNutritionForPortion,
+  validateMacroCalories, calculateMacroPercentages
+};
