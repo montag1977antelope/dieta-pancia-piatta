@@ -177,14 +177,160 @@
     <script src="js/utils.js"></script>
     <script src="js/app.js"></script>
     <script>
-        // Funzione per mostrare notifiche (duplicata qui per evitare problemi di caricamento)
+        // Stato locale per la dashboard
+        const dashboardState = {
+            todayMeals: {
+                breakfast: [],
+                snack1: [],
+                lunch: [],
+                snack2: [],
+                dinner: []
+            },
+            weekData: []
+        };
+
+        // Inizializza dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDashboardData();
+            updateWeeklyStatistics();
+        });
+
+        // Carica dati dashboard
+        function loadDashboardData() {
+            // Carica i pasti di oggi se salvati
+            const savedToday = localStorage.getItem('todayMeals');
+            if (savedToday) {
+                const data = JSON.parse(savedToday);
+                const today = new Date().toISOString().split('T')[0];
+                if (data.date === today) {
+                    dashboardState.todayMeals = data.meals;
+                    updateDailySummary();
+                    updateMealsDisplay();
+                }
+            }
+
+            // Carica dati settimanali se presenti
+            const weekData = localStorage.getItem('weekData');
+            if (weekData) {
+                dashboardState.weekData = JSON.parse(weekData);
+            }
+        }
+
+        // Aggiorna riepilogo giornaliero
+        function updateDailySummary() {
+            let totals = {
+                calories: 0,
+                proteins: 0,
+                fats: 0,
+                carbs: 0
+            };
+
+            // Calcola totali dai pasti
+            Object.values(dashboardState.todayMeals).forEach(mealFoods => {
+                mealFoods.forEach(food => {
+                    totals.calories += food.calories || 0;
+                    totals.proteins += food.proteins || 0;
+                    totals.fats += food.fats || 0;
+                    totals.carbs += food.carbs || 0;
+                });
+            });
+
+            // Aggiorna UI
+            document.getElementById('todayCalories').textContent = Math.round(totals.calories);
+            document.getElementById('todayProteins').textContent = `${Math.round(totals.proteins)}g`;
+            document.getElementById('todayFats').textContent = `${Math.round(totals.fats)}g`;
+            document.getElementById('todayCarbs').textContent = `${Math.round(totals.carbs)}g`;
+        }
+
+        // Aggiorna visualizzazione pasti
+        function updateMealsDisplay() {
+            const mealTypes = ['breakfast', 'snack1', 'lunch', 'snack2', 'dinner'];
+            
+            mealTypes.forEach(mealType => {
+                const contentEl = document.getElementById(`${mealType}Content`);
+                if (contentEl) {
+                    const foods = dashboardState.todayMeals[mealType];
+                    
+                    if (foods.length === 0) {
+                        contentEl.innerHTML = '<p class="meal-empty">Nessun pasto registrato</p>';
+                    } else {
+                        contentEl.innerHTML = foods.map(food => `
+                            <div class="meal-item" style="display: flex; justify-content: space-between; padding: 0.5rem 0;">
+                                <span>${food.name} (${food.portion}${food.unit})</span>
+                                <span style="color: var(--text-secondary);">${Math.round(food.calories)} kcal</span>
+                            </div>
+                        `).join('');
+                    }
+                }
+            });
+        }
+
+        // Aggiorna statistiche settimanali
+        function updateWeeklyStatistics() {
+            // Se non ci sono dati, mostra valori di default
+            if (!dashboardState.weekData || dashboardState.weekData.length === 0) {
+                document.getElementById('weekAdherence').textContent = '0%';
+                document.getElementById('adherenceBar').style.width = '0%';
+                document.getElementById('consecutiveDays').textContent = '0';
+                document.getElementById('streakStatus').textContent = 'Inizia oggi!';
+                document.getElementById('avgCalories').textContent = '0';
+                document.getElementById('caloriesTrend').textContent = 'Nessun dato';
+                return;
+            }
+
+            // Calcola statistiche reali
+            const today = new Date();
+            const lastWeek = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+            
+            // Filtra dati ultima settimana
+            const weekStats = dashboardState.weekData.filter(day => {
+                const dayDate = new Date(day.date);
+                return dayDate >= lastWeek && dayDate <= today;
+            });
+
+            // Calcola aderenza (giorni con pasti registrati / 7)
+            const daysWithMeals = weekStats.filter(day => day.totalCalories > 0).length;
+            const adherence = Math.round((daysWithMeals / 7) * 100);
+            document.getElementById('weekAdherence').textContent = `${adherence}%`;
+            document.getElementById('adherenceBar').style.width = `${adherence}%`;
+
+            // Calcola giorni consecutivi
+            let consecutiveDays = 0;
+            for (let i = weekStats.length - 1; i >= 0; i--) {
+                if (weekStats[i].totalCalories > 0) {
+                    consecutiveDays++;
+                } else {
+                    break;
+                }
+            }
+            document.getElementById('consecutiveDays').textContent = consecutiveDays;
+            document.getElementById('streakStatus').textContent = 
+                consecutiveDays > 0 ? '🔥 Serie attiva!' : 'Inizia oggi!';
+
+            // Calcola media calorie
+            const totalCalories = weekStats.reduce((sum, day) => sum + (day.totalCalories || 0), 0);
+            const avgCalories = daysWithMeals > 0 ? Math.round(totalCalories / daysWithMeals) : 0;
+            document.getElementById('avgCalories').textContent = avgCalories.toLocaleString('it-IT');
+            
+            // Calcola trend vs target
+            const target = 1800; // Target giornaliero
+            const diff = avgCalories - target;
+            if (avgCalories === 0) {
+                document.getElementById('caloriesTrend').textContent = 'Nessun dato';
+            } else {
+                document.getElementById('caloriesTrend').textContent = 
+                    diff > 0 ? `📈 +${diff} vs target` : `📉 ${diff} vs target`;
+            }
+        }
+
+        // Funzione per mostrare notifiche
         function showNotification(message, type = 'success') {
             const notification = document.createElement('div');
             notification.style.cssText = `
                 position: fixed;
                 top: 20px;
                 right: 20px;
-                background: ${type === 'success' ? '#10b981' : '#ef4444'};
+                background: ${type === 'success' ? '#10b981' : type === 'info' ? '#3b82f6' : '#ef4444'};
                 color: white;
                 padding: 1rem 1.5rem;
                 border-radius: 0.375rem;
@@ -201,7 +347,7 @@
             }, 3000);
         }
 
-        // Override della funzione addMeal per il testing
+        // Funzione per aggiungere pasto
         function addMeal(mealType) {
             const mealNames = {
                 breakfast: 'colazione',
@@ -212,7 +358,11 @@
             };
             
             console.log(`Aggiungi ${mealNames[mealType]}`);
-            showNotification(`Funzionalità in arrivo! Per ora usa la sezione Impostazioni per vedere gli alimenti.`, 'info');
+            
+            // Per ora mostra messaggio informativo
+            showNotification(`Per aggiungere alimenti, vai nella sezione Impostazioni`, 'info');
+            
+            // In futuro qui apriremo un modal per selezionare gli alimenti
         }
 
         // Aggiungi animazioni CSS
@@ -238,6 +388,13 @@
                     transform: translateX(100%);
                     opacity: 0;
                 }
+            }
+            
+            .meal-item:hover {
+                background-color: var(--hover-bg);
+                margin: 0 -0.5rem;
+                padding: 0.5rem !important;
+                border-radius: 0.375rem;
             }
         `;
         document.head.appendChild(style);
