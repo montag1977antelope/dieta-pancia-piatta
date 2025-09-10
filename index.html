@@ -172,6 +172,34 @@
         </main>
     </div>
 
+    <!-- Add Meal Modal -->
+    <div class="modal" id="mealModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="mealModalTitle">Aggiungi Pasto</h2>
+                <button class="modal-close" onclick="closeMealModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="search-box" style="margin-bottom: 1rem;">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" class="search-input" placeholder="Cerca alimento..." id="mealSearchInput">
+                </div>
+                <div id="selectedMealFoodsSection" style="margin-bottom: 1rem;">
+                    <h4 style="margin-bottom: 0.5rem;">Alimenti Selezionati:</h4>
+                    <div id="selectedMealFoodsList"></div>
+                </div>
+                <div id="mealSearchResultsSection" style="max-height: 300px; overflow-y: auto;">
+                    <h4 style="margin-bottom: 0.5rem;">Risultati Ricerca:</h4>
+                    <div id="mealSearchResults"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeMealModal()">Annulla</button>
+                <button class="btn btn-primary" onclick="saveMealToDashboard()">Salva Pasto</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script src="js/database.js"></script>
     <script src="js/utils.js"></script>
@@ -514,6 +542,21 @@
             showNotification('Pasto aggiunto con successo!');
         }
 
+        // Funzione helper per ottenere alimento dal database
+        function getFoodById(foodId) {
+            for (const [catId, catData] of Object.entries(dietaDB.categorie)) {
+                const food = catData.alimenti.find(f => f.id === foodId);
+                if (food) {
+                    return {
+                        ...food,
+                        categoriaId: catId,
+                        categoriaNome: catData.nome
+                    };
+                }
+            }
+            return null;
+        }
+
         // Aggiungi funzione di ricerca alimenti mancante
         function searchFoods(searchTerm, category = null) {
             const results = [];
@@ -569,6 +612,19 @@
             };
         }
 
+        // Funzione debounce
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
         // Aggiungi animazioni CSS
         const style = document.createElement('style');
         style.textContent = `
@@ -604,210 +660,6 @@
 
             .btn-icon.delete:hover {
                 color: var(--danger-color);
-            }
-        `;
-        document.head.appendChild(style);
-    </script>IT', options);
-            
-            // Carica dati
-            loadDashboardData();
-            updateWeeklyStatistics();
-        });
-
-        // Carica dati dashboard
-        function loadDashboardData() {
-            // Carica i pasti di oggi se salvati
-            const savedToday = localStorage.getItem('todayMeals');
-            if (savedToday) {
-                const data = JSON.parse(savedToday);
-                const today = new Date().toISOString().split('T')[0];
-                if (data.date === today) {
-                    dashboardState.todayMeals = data.meals;
-                    updateDailySummary();
-                    updateMealsDisplay();
-                }
-            }
-
-            // Carica dati settimanali se presenti
-            const weekData = localStorage.getItem('weekData');
-            if (weekData) {
-                dashboardState.weekData = JSON.parse(weekData);
-            }
-        }
-
-        // Aggiorna riepilogo giornaliero
-        function updateDailySummary() {
-            let totals = {
-                calories: 0,
-                proteins: 0,
-                fats: 0,
-                carbs: 0
-            };
-
-            // Calcola totali dai pasti
-            Object.values(dashboardState.todayMeals).forEach(mealFoods => {
-                mealFoods.forEach(food => {
-                    totals.calories += food.calories || 0;
-                    totals.proteins += food.proteins || 0;
-                    totals.fats += food.fats || 0;
-                    totals.carbs += food.carbs || 0;
-                });
-            });
-
-            // Aggiorna UI
-            document.getElementById('todayCalories').textContent = Math.round(totals.calories);
-            document.getElementById('todayProteins').textContent = `${Math.round(totals.proteins)}g`;
-            document.getElementById('todayFats').textContent = `${Math.round(totals.fats)}g`;
-            document.getElementById('todayCarbs').textContent = `${Math.round(totals.carbs)}g`;
-        }
-
-        // Aggiorna visualizzazione pasti
-        function updateMealsDisplay() {
-            const mealTypes = ['breakfast', 'snack1', 'lunch', 'snack2', 'dinner'];
-            
-            mealTypes.forEach(mealType => {
-                const contentEl = document.getElementById(`${mealType}Content`);
-                if (contentEl) {
-                    const foods = dashboardState.todayMeals[mealType];
-                    
-                    if (foods.length === 0) {
-                        contentEl.innerHTML = '<p class="meal-empty">Nessun pasto registrato</p>';
-                    } else {
-                        contentEl.innerHTML = foods.map(food => `
-                            <div class="meal-item" style="display: flex; justify-content: space-between; padding: 0.5rem 0;">
-                                <span>${food.name} (${food.portion}${food.unit})</span>
-                                <span style="color: var(--text-secondary);">${Math.round(food.calories)} kcal</span>
-                            </div>
-                        `).join('');
-                    }
-                }
-            });
-        }
-
-        // Aggiorna statistiche settimanali
-        function updateWeeklyStatistics() {
-            // Se non ci sono dati, i valori sono già a 0 nell'HTML
-            if (!dashboardState.weekData || dashboardState.weekData.length === 0) {
-                return; // Lascia i valori di default
-            }
-
-            // Calcola statistiche reali
-            const today = new Date();
-            const lastWeek = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-            
-            // Filtra dati ultima settimana
-            const weekStats = dashboardState.weekData.filter(day => {
-                const dayDate = new Date(day.date);
-                return dayDate >= lastWeek && dayDate <= today;
-            });
-
-            // Calcola aderenza (giorni con pasti registrati / 7)
-            const daysWithMeals = weekStats.filter(day => day.totalCalories > 0).length;
-            const adherence = Math.round((daysWithMeals / 7) * 100);
-            document.getElementById('weekAdherence').textContent = `${adherence}%`;
-            document.getElementById('adherenceBar').style.width = `${adherence}%`;
-
-            // Calcola giorni consecutivi
-            let consecutiveDays = 0;
-            for (let i = weekStats.length - 1; i >= 0; i--) {
-                if (weekStats[i].totalCalories > 0) {
-                    consecutiveDays++;
-                } else {
-                    break;
-                }
-            }
-            document.getElementById('consecutiveDays').textContent = consecutiveDays;
-            document.getElementById('streakStatus').textContent = 
-                consecutiveDays > 0 ? '🔥 Serie attiva!' : 'Inizia oggi!';
-
-            // Calcola media calorie
-            const totalCalories = weekStats.reduce((sum, day) => sum + (day.totalCalories || 0), 0);
-            const avgCalories = daysWithMeals > 0 ? Math.round(totalCalories / daysWithMeals) : 0;
-            document.getElementById('avgCalories').textContent = avgCalories.toLocaleString('it-IT');
-            
-            // Calcola trend vs target
-            const target = 1800; // Target giornaliero
-            const diff = avgCalories - target;
-            if (avgCalories === 0) {
-                document.getElementById('caloriesTrend').textContent = 'Nessun dato';
-            } else {
-                document.getElementById('caloriesTrend').textContent = 
-                    diff > 0 ? `📈 +${diff} vs target` : `📉 ${diff} vs target`;
-            }
-        }
-
-        // Funzione per mostrare notifiche
-        function showNotification(message, type = 'success') {
-            const notification = document.createElement('div');
-            notification.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                background: ${type === 'success' ? '#10b981' : type === 'info' ? '#3b82f6' : '#ef4444'};
-                color: white;
-                padding: 1rem 1.5rem;
-                border-radius: 0.375rem;
-                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-                z-index: 1001;
-                animation: slideIn 0.3s ease-out;
-            `;
-            notification.textContent = message;
-            document.body.appendChild(notification);
-            
-            setTimeout(() => {
-                notification.style.animation = 'slideOut 0.3s ease-out';
-                setTimeout(() => notification.remove(), 300);
-            }, 3000);
-        }
-
-        // Funzione per aggiungere pasto
-        function addMeal(mealType) {
-            const mealNames = {
-                breakfast: 'colazione',
-                snack1: 'spuntino mattina',
-                lunch: 'pranzo',
-                snack2: 'spuntino pomeriggio',
-                dinner: 'cena'
-            };
-            
-            console.log(`Aggiungi ${mealNames[mealType]}`);
-            
-            // Per ora mostra messaggio informativo
-            showNotification(`Per aggiungere alimenti, vai nella sezione Impostazioni`, 'info');
-            
-            // In futuro qui apriremo un modal per selezionare gli alimenti
-        }
-
-        // Aggiungi animazioni CSS
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes slideIn {
-                from {
-                    transform: translateX(100%);
-                    opacity: 0;
-                }
-                to {
-                    transform: translateX(0);
-                    opacity: 1;
-                }
-            }
-            
-            @keyframes slideOut {
-                from {
-                    transform: translateX(0);
-                    opacity: 1;
-                }
-                to {
-                    transform: translateX(100%);
-                    opacity: 0;
-                }
-            }
-            
-            .meal-item:hover {
-                background-color: var(--hover-bg);
-                margin: 0 -0.5rem;
-                padding: 0.5rem !important;
-                border-radius: 0.375rem;
             }
         `;
         document.head.appendChild(style);
