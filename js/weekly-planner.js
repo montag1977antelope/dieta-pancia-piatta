@@ -592,21 +592,78 @@ function renderSelectedFoods() {
     
     listDiv.innerHTML = selectedFoods.map((item, index) => {
         const food = getFoodById(item.id);
-        return `
-            <div class="meal-item" style="padding: 0.5rem; border: 1px solid var(--border-color); margin-bottom: 0.5rem; border-radius: 0.375rem;">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span>${food.nome}</span>
-                    <div style="display: flex; align-items: center; gap: 0.5rem;">
-                        <input type="number" value="${item.quantity}" min="1" 
-                               style="width: 80px; padding: 0.25rem;"
-                               onchange="updateFoodQuantity(${index}, this.value)">
-                        <span>${food.unita_misura || 'g'}</span>
-                        <button class="btn-icon delete" onclick="removeFoodFromMeal(${index})">🗑️</button>
+        
+        // Prepara HTML per alternative
+        let alternativesHtml = '';
+        if (item.alternatives && item.alternatives.length > 0) {
+            const altButtons = item.alternatives.map(altId => {
+                const altFood = getFoodById(altId);
+                if (!altFood) return '';
+                return `
+                    <button class="btn btn-small btn-secondary" 
+                            style="margin: 0.25rem; padding: 0.25rem 0.5rem; font-size: 0.75rem;"
+                            onclick="swapWithAlternative(${index}, '${altId}')"
+                            title="Sostituisci con ${altFood.nome}">
+                        🔄 ${altFood.nome}
+                    </button>
+                `;
+            }).join('');
+            
+            if (altButtons) {
+                alternativesHtml = `
+                    <div style="margin-top: 0.5rem;">
+                        <span style="font-size: 0.813rem; color: var(--text-secondary);">Alternative:</span>
+                        ${altButtons}
                     </div>
+                `;
+            }
+        }
+        
+        return `
+            <div class="meal-item" style="padding: 0.75rem; border: 1px solid var(--border-color); margin-bottom: 0.5rem; border-radius: 0.375rem;">
+                <div style="flex: 1;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-weight: 500;">${food.nome}</span>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <input type="number" value="${item.quantity}" min="1" 
+                                   style="width: 80px; padding: 0.25rem;"
+                                   onchange="updateFoodQuantity(${index}, this.value)">
+                            <span>${food.unita_misura || 'g'}</span>
+                            <button class="btn-icon delete" onclick="removeFoodFromMeal(${index})">🗑️</button>
+                        </div>
+                    </div>
+                    ${alternativesHtml}
                 </div>
             </div>
         `;
     }).join('');
+}
+
+// Funzione per sostituire con alternativa
+function swapWithAlternative(index, alternativeId) {
+    const currentItem = selectedFoods[index];
+    const altFood = getFoodById(alternativeId);
+    
+    if (altFood) {
+        // Mantieni le alternative originali
+        const alternatives = currentItem.alternatives;
+        
+        // Aggiungi l'alimento corrente come alternativa
+        const newAlternatives = [currentItem.id, ...alternatives.filter(id => id !== alternativeId)];
+        
+        // Sostituisci con l'alternativa
+        selectedFoods[index] = {
+            id: alternativeId,
+            quantity: altFood.porzione_standard,
+            alternatives: newAlternatives
+        };
+        
+        renderSelectedFoods();
+        
+        if (typeof showNotification === 'function') {
+            showNotification(`Sostituito con ${altFood.nome}`);
+        }
+    }
 }
 
 // Aggiorna quantità
