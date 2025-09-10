@@ -69,14 +69,17 @@ function saveMealsData() {
 
 // Setup event listeners
 function setupEventListeners() {
-    // Listener per navigazione
+    // Listener per navigazione - controlla se esistono
     document.querySelectorAll('.nav-tab').forEach(tab => {
-        tab.addEventListener('click', handleNavigation);
+        if (tab) {
+            tab.addEventListener('click', handleNavigation);
+        }
     });
     
-    // Listener per modal (se presente)
-    if (document.getElementById('foodModal')) {
-        document.getElementById('foodModal').addEventListener('click', function(e) {
+    // Listener per modal - controlla se esiste
+    const foodModal = document.getElementById('foodModal');
+    if (foodModal) {
+        foodModal.addEventListener('click', function(e) {
             if (e.target.id === 'foodModal') {
                 closeFoodModal();
             }
@@ -197,7 +200,7 @@ function updateWeeklyStats() {
     // In futuro calcolerà dalle statistiche reali salvate
 }
 
-// Aggiungi pasto
+// Aggiungi pasto - funzione globale
 function addMeal(mealType) {
     // Per ora mostra alert
     // In futuro aprirà modal selezione cibo
@@ -217,7 +220,10 @@ function addMeal(mealType) {
 
 // Mostra modal selezione cibo (placeholder)
 function showFoodSelectionModal(mealType) {
-    alert(`Seleziona alimenti per ${mealType}.\nQuesta funzionalità sarà disponibile a breve!`);
+    // Questa funzione verrà implementata nella pagina specifica
+    if (typeof showNotification === 'function') {
+        showNotification(`Seleziona alimenti per ${mealType}`, 'info');
+    }
 }
 
 // Funzioni utility
@@ -250,5 +256,7 @@ function showNotification(message, type = 'success') {
 }
 
 // Esporta funzioni per uso globale
-window.addMeal = addMeal;
-window.showNotification = showNotification;
+if (typeof window !== 'undefined') {
+    window.addMeal = addMeal;
+    window.showNotification = showNotification;
+}
