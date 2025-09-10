@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#2563eb">
+    <title>Piano Settimanale - Dieta Pancia Piatta</title>
+    
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="manifest" href="../manifest.json">
+    
+    <style>
+        /* Stili specifici per il piano settimanale */
+        .week-controls {
+            background-color: var(--surface);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            box-shadow: var(--shadow);
+        }
+
+        .week-selector {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .week-display {
+            font-weight: 600;
+            min-width: 200px;
+            text-align: center;
+        }
+
+        .days-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .day-card {
+            background-color: var(--surface);
+            border-radius: 0.5rem;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+
+        .day-card.today {
+            box-shadow: 0 0 0 2px var(--primary-color);
+        }
+
+        .day-header {
+            padding: 1rem;
+            background-color: var(--primary-color);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .day-header h3 {
+            font-size: 1.125rem;
+            font-weight: 600;
+        }
+
+        .day-date {
+            font-size: 0.875rem;
+            opacity: 0.9;
+        }
+
+        .meal-section {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .meal-section:last-child {
+            border-bottom: none;
+        }
+
+        .meal-type {
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .meal-items {
+            font-size: 0.875rem;
+            line-height: 1.6;
+        }
+
+        .meal-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.25rem 0;
+        }
+
+        .meal-item-name {
+            flex: 1;
+        }
+
+        .meal-item-info {
+            color: var(--text-secondary);
+            font-size: 0.813rem;
+        }
+
+        .empty-meal {
+            color: var(--text-secondary);
+            font-style: italic;
+            font-size: 0.813rem;
+        }
+
+        .day-summary {
+            padding: 0.75rem 1rem;
+            background-color: var(--hover-bg);
+            font-size: 0.813rem;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.5rem;
+            text-align: center;
+        }
+
+        .summary-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .summary-label {
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+        }
+
+        .summary-value {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .import-modal {
+            display: none;
+        }
+
+        .template-selector {
+            display: grid;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .template-option {
+            padding: 1rem;
+            border: 2px solid var(--border-color);
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .template-option:hover {
+            border-color: var(--primary-color);
+            background-color: var(--hover-bg);
+        }
+
+        .template-option.selected {
+            border-color: var(--primary-color);
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .days-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1>📅 Piano Settimanale</h1>
+                <button class="btn btn-primary" onclick="saveWeeklyPlan()">
+                    <span>💾</span>
+                    Salva Piano
+                </button>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="nav-tabs">
+            <a href="../index.html" class="nav-tab">📊 Dashboard</a>
+            <a href="weekly.html" class="nav-tab active">📅 Piano Settimanale</a>
+            <a href="settings.html" class="nav-tab">⚙️ Impostazioni</a>
+            <a href="shopping.html" class="nav-tab">📋 Lista Spesa</a>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Week Controls -->
+            <div class="week-controls">
+                <div class="week-selector">
+                    <button class="btn btn-secondary" onclick="changeWeek(-1)">
+                        ← Settimana Precedente
+                    </button>
+                    <div class="week-display" id="weekDisplay">
+                        Settimana Corrente
+                    </div>
+                    <button class="btn btn-secondary" onclick="changeWeek(1)">
+                        Settimana Successiva →
+                    </button>
+                </div>
+                <div>
+                    <button class="btn btn-primary" onclick="showImportModal()">
+                        📥 Importa Template
+                    </button>
+                    <button class="btn btn-secondary" onclick="exportWeekPlan()">
+                        📤 Esporta Piano
+                    </button>
+                </div>
+            </div>
+
+            <!-- Days Grid -->
+            <div class="days-grid" id="daysGrid">
+                <!-- I giorni saranno generati dinamicamente -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Import Modal -->
+    <div class="modal import-modal" id="importModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Importa Template Piano Settimanale</h2>
+                <button class="modal-close" onclick="closeImportModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="template-selector">
+                    <label class="template-option" onclick="selectTemplate('original')">
+                        <input type="radio" name="template" value="original" checked>
+                        <strong>Piano Originale Dieta Pancia Piatta</strong>
+                        <p style="margin: 0.5rem 0 0 0; font-size: 0.875rem; opacity: 0.8;">
+                            Il piano completo dalla tua dieta con tutte le alternative
+                        </p>
+                    </label>
+                    <label class="template-option" onclick="selectTemplate('empty')">
+                        <input type="radio" name="template" value="empty">
+                        <strong>Piano Vuoto</strong>
+                        <p style="margin: 0.5rem 0 0 0; font-size: 0.875rem; opacity: 0.8;">
+                            Inizia da zero e crea il tuo piano personalizzato
+                        </p>
+                    </label>
+                    <label class="template-option" onclick="selectTemplate('file')">
+                        <input type="radio" name="template" value="file">
+                        <strong>Importa da File</strong>
+                        <p style="margin: 0.5rem 0 0 0; font-size: 0.875rem; opacity: 0.8;">
+                            Carica un piano esportato precedentemente (JSON)
+                        </p>
+                    </label>
+                </div>
+                <div id="fileUploadSection" style="display: none; margin-top: 1rem;">
+                    <input type="file" id="fileInput" accept=".json" class="form-input">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeImportModal()">Annulla</button>
+                <button class="btn btn-primary" onclick="importSelectedTemplate()">Importa</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Meal Modal -->
+    <div class="modal" id="editMealModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="editMealTitle">Modifica Pasto</h2>
+                <button class="modal-close" onclick="closeEditMealModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="search-box mb-2">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" class="search-input" placeholder="Cerca alimento..." id="foodSearchInput">
+                </div>
+                <div id="selectedFoodsSection" class="mb-2">
+                    <h4 style="margin-bottom: 0.5rem;">Alimenti Selezionati:</h4>
+                    <div id="selectedFoodsList"></div>
+                </div>
+                <div id="searchResultsSection" style="max-height: 300px; overflow-y: auto;">
+                    <h4 style="margin-bottom: 0.5rem;">Risultati Ricerca:</h4>
+                    <div id="searchResults"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeEditMealModal()">Annulla</button>
+                <button class="btn btn-primary" onclick="saveMealChanges()">Salva Modifiche</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="../js/database.js"></script>
+    <script src="../js/utils.js"></script>
+    <script src="../js/weekly-planner.js"></script>
+</body>
+</html>
