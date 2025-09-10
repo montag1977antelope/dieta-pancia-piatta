@@ -3,391 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dieta Pancia Piatta - Impostazioni</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        :root {
-            --primary-color: #2563eb;
-            --secondary-color: #10b981;
-            --danger-color: #ef4444;
-            --warning-color: #f59e0b;
-            --background: #f9fafb;
-            --surface: #ffffff;
-            --text-primary: #111827;
-            --text-secondary: #6b7280;
-            --border-color: #e5e7eb;
-            --hover-bg: #f3f4f6;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-            background-color: var(--background);
-            color: var(--text-primary);
-            line-height: 1.6;
-        }
-
-        .app-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            min-height: 100vh;
-        }
-
-        /* Header */
-        .header {
-            background-color: var(--surface);
-            border-bottom: 1px solid var(--border-color);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        .header-content {
-            padding: 1rem 1.5rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .header h1 {
-            font-size: 1.5rem;
-            font-weight: 600;
-        }
-
-        /* Navigation */
-        .nav-tabs {
-            display: flex;
-            gap: 2rem;
-            padding: 0 1.5rem;
-            background-color: var(--surface);
-            border-bottom: 1px solid var(--border-color);
-            overflow-x: auto;
-        }
-
-        .nav-tab {
-            padding: 0.75rem 0;
-            color: var(--text-secondary);
-            text-decoration: none;
-            border-bottom: 2px solid transparent;
-            transition: all 0.2s;
-            white-space: nowrap;
-        }
-
-        .nav-tab:hover {
-            color: var(--text-primary);
-        }
-
-        .nav-tab.active {
-            color: var(--primary-color);
-            border-bottom-color: var(--primary-color);
-        }
-
-        /* Main Content */
-        .main-content {
-            padding: 1.5rem;
-        }
-
-        /* Search and Filter Bar */
-        .controls-bar {
-            background-color: var(--surface);
-            padding: 1rem;
-            border-radius: 0.5rem;
-            margin-bottom: 1.5rem;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1rem;
-            align-items: center;
-        }
-
-        .search-box {
-            flex: 1;
-            min-width: 250px;
-            position: relative;
-        }
-
-        .search-input {
-            width: 100%;
-            padding: 0.75rem 1rem 0.75rem 2.5rem;
-            border: 1px solid var(--border-color);
-            border-radius: 0.375rem;
-            font-size: 0.875rem;
-        }
-
-        .search-icon {
-            position: absolute;
-            left: 0.75rem;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-secondary);
-        }
-
-        .filter-select {
-            padding: 0.75rem 1rem;
-            border: 1px solid var(--border-color);
-            border-radius: 0.375rem;
-            font-size: 0.875rem;
-            background-color: var(--surface);
-            cursor: pointer;
-        }
-
-        .btn {
-            padding: 0.75rem 1.25rem;
-            border: none;
-            border-radius: 0.375rem;
-            font-size: 0.875rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .btn-primary {
-            background-color: var(--primary-color);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background-color: #1d4ed8;
-        }
-
-        .btn-secondary {
-            background-color: var(--surface);
-            color: var(--text-primary);
-            border: 1px solid var(--border-color);
-        }
-
-        .btn-secondary:hover {
-            background-color: var(--hover-bg);
-        }
-
-        /* Food Categories Grid */
-        .categories-grid {
-            display: grid;
-            gap: 1.5rem;
-        }
-
-        .category-section {
-            background-color: var(--surface);
-            border-radius: 0.5rem;
-            overflow: hidden;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        }
-
-        .category-header {
-            padding: 1rem 1.5rem;
-            background-color: var(--primary-color);
-            color: white;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .category-header h2 {
-            font-size: 1.125rem;
-            font-weight: 600;
-        }
-
-        .category-count {
-            background-color: rgba(255, 255, 255, 0.2);
-            padding: 0.25rem 0.75rem;
-            border-radius: 1rem;
-            font-size: 0.875rem;
-        }
-
-        /* Food Items Table */
-        .food-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .food-table th {
-            padding: 0.75rem 1rem;
-            text-align: left;
-            background-color: var(--hover-bg);
-            font-weight: 600;
-            font-size: 0.875rem;
-            color: var(--text-secondary);
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .food-table td {
-            padding: 0.75rem 1rem;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .food-table tr:hover {
-            background-color: var(--hover-bg);
-        }
-
-        .food-name {
-            font-weight: 500;
-        }
-
-        .nutrient-value {
-            color: var(--text-secondary);
-            font-size: 0.875rem;
-        }
-
-        .actions-cell {
-            display: flex;
-            gap: 0.5rem;
-            justify-content: flex-end;
-        }
-
-        .btn-icon {
-            padding: 0.5rem;
-            border-radius: 0.375rem;
-            border: none;
-            background-color: transparent;
-            cursor: pointer;
-            color: var(--text-secondary);
-            transition: all 0.2s;
-        }
-
-        .btn-icon:hover {
-            background-color: var(--hover-bg);
-            color: var(--text-primary);
-        }
-
-        .btn-icon.edit:hover {
-            color: var(--primary-color);
-        }
-
-        .btn-icon.delete:hover {
-            color: var(--danger-color);
-        }
-
-        /* Modal */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
-            overflow-y: auto;
-        }
-
-        .modal.active {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal-content {
-            background-color: var(--surface);
-            border-radius: 0.5rem;
-            width: 90%;
-            max-width: 600px;
-            max-height: 90vh;
-            overflow-y: auto;
-            margin: 2rem;
-        }
-
-        .modal-header {
-            padding: 1.5rem;
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .modal-header h2 {
-            font-size: 1.25rem;
-            font-weight: 600;
-        }
-
-        .modal-close {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: var(--text-secondary);
-        }
-
-        .modal-body {
-            padding: 1.5rem;
-        }
-
-        .form-grid {
-            display: grid;
-            gap: 1.5rem;
-        }
-
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-        }
-
-        .form-label {
-            font-weight: 500;
-            font-size: 0.875rem;
-        }
-
-        .form-input {
-            padding: 0.75rem 1rem;
-            border: 1px solid var(--border-color);
-            border-radius: 0.375rem;
-            font-size: 0.875rem;
-        }
-
-        .form-input:focus {
-            outline: none;
-            border-color: var(--primary-color);
-        }
-
-        .modal-footer {
-            padding: 1.5rem;
-            border-top: 1px solid var(--border-color);
-            display: flex;
-            justify-content: flex-end;
-            gap: 1rem;
-        }
-
-        /* Mobile Responsive */
-        @media (max-width: 768px) {
-            .controls-bar {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .search-box {
-                min-width: auto;
-            }
-
-            .form-row {
-                grid-template-columns: 1fr;
-            }
-
-            .food-table {
-                font-size: 0.813rem;
-            }
-
-            .food-table th,
-            .food-table td {
-                padding: 0.5rem;
-            }
-
-            .nutrient-mobile-hide {
-                display: none;
-            }
-        }
-    </style>
+    <meta name="theme-color" content="#2563eb">
+    <meta name="description" content="Gestione completa della dieta pancia piatta con tracking nutrizionale">
+    
+    <title>Dieta Pancia Piatta - Dashboard</title>
+    
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- PWA iOS support -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
 </head>
 <body>
     <div class="app-container">
@@ -395,400 +22,225 @@
         <header class="header">
             <div class="header-content">
                 <h1>🥗 Dieta Pancia Piatta</h1>
-                <button class="btn btn-primary">
-                    <span>💾</span>
-                    Salva modifiche
-                </button>
+                <div class="header-date" id="currentDate"></div>
             </div>
         </header>
 
         <!-- Navigation -->
         <nav class="nav-tabs">
-            <a href="#" class="nav-tab">📅 Piano Settimanale</a>
-            <a href="#" class="nav-tab">📊 Dashboard</a>
-            <a href="#" class="nav-tab active">⚙️ Impostazioni</a>
-            <a href="#" class="nav-tab">📋 Lista Spesa</a>
-            <a href="#" class="nav-tab">📈 Progressi</a>
+            <a href="index.html" class="nav-tab active">📊 Dashboard</a>
+            <a href="pages/weekly.html" class="nav-tab">📅 Piano Settimanale</a>
+            <a href="pages/settings.html" class="nav-tab">⚙️ Impostazioni</a>
+            <a href="pages/shopping.html" class="nav-tab">📋 Lista Spesa</a>
         </nav>
 
-        <!-- Main Content -->
+        <!-- Main Dashboard Content -->
         <main class="main-content">
-            <!-- Controls Bar -->
-            <div class="controls-bar">
-                <div class="search-box">
-                    <span class="search-icon">🔍</span>
-                    <input type="text" class="search-input" placeholder="Cerca alimento..." id="searchInput">
+            <!-- Today's Summary -->
+            <section class="dashboard-section">
+                <h2 class="section-title">Riepilogo di Oggi</h2>
+                <div class="summary-grid">
+                    <div class="summary-card">
+                        <div class="summary-icon">🔥</div>
+                        <div class="summary-content">
+                            <div class="summary-value" id="todayCalories">0</div>
+                            <div class="summary-label">Calorie</div>
+                            <div class="summary-target">Target: 1800</div>
+                        </div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-icon">🥩</div>
+                        <div class="summary-content">
+                            <div class="summary-value" id="todayProteins">0g</div>
+                            <div class="summary-label">Proteine</div>
+                            <div class="summary-target">Target: 120g</div>
+                        </div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-icon">🥑</div>
+                        <div class="summary-content">
+                            <div class="summary-value" id="todayFats">0g</div>
+                            <div class="summary-label">Grassi</div>
+                            <div class="summary-target">Target: 60g</div>
+                        </div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-icon">🍞</div>
+                        <div class="summary-content">
+                            <div class="summary-value" id="todayCarbs">0g</div>
+                            <div class="summary-label">Carboidrati</div>
+                            <div class="summary-target">Target: 180g</div>
+                        </div>
+                    </div>
                 </div>
-                <select class="filter-select" id="categoryFilter">
-                    <option value="">Tutte le categorie</option>
-                    <option value="proteine">Proteine</option>
-                    <option value="carboidrati">Carboidrati</option>
-                    <option value="verdure">Verdure</option>
-                    <option value="frutta">Frutta</option>
-                    <option value="frutta_secca">Frutta Secca</option>
-                    <option value="grassi_condimenti">Grassi e Condimenti</option>
-                    <option value="legumi">Legumi</option>
-                    <option value="bevande">Bevande</option>
-                </select>
-                <button class="btn btn-primary" onclick="openAddFoodModal()">
-                    <span>➕</span>
-                    Aggiungi Alimento
-                </button>
-            </div>
+            </section>
 
-            <!-- Categories Grid -->
-            <div class="categories-grid" id="categoriesGrid">
-                <!-- Le categorie saranno generate dinamicamente via JavaScript -->
-            </div>
+            <!-- Today's Meals -->
+            <section class="dashboard-section">
+                <h2 class="section-title">Pasti di Oggi</h2>
+                <div class="meals-container">
+                    <div class="meal-card">
+                        <div class="meal-header">
+                            <h3>🌅 Colazione</h3>
+                            <span class="meal-time">7:30</span>
+                        </div>
+                        <div class="meal-content" id="breakfastContent">
+                            <p class="meal-empty">Nessun pasto registrato</p>
+                        </div>
+                        <button class="btn btn-secondary btn-small" onclick="addMeal('breakfast')">
+                            + Aggiungi
+                        </button>
+                    </div>
+
+                    <div class="meal-card">
+                        <div class="meal-header">
+                            <h3>🍎 Spuntino Mattina</h3>
+                            <span class="meal-time">10:30</span>
+                        </div>
+                        <div class="meal-content" id="snack1Content">
+                            <p class="meal-empty">Nessun pasto registrato</p>
+                        </div>
+                        <button class="btn btn-secondary btn-small" onclick="addMeal('snack1')">
+                            + Aggiungi
+                        </button>
+                    </div>
+
+                    <div class="meal-card">
+                        <div class="meal-header">
+                            <h3>🍽️ Pranzo</h3>
+                            <span class="meal-time">13:00</span>
+                        </div>
+                        <div class="meal-content" id="lunchContent">
+                            <p class="meal-empty">Nessun pasto registrato</p>
+                        </div>
+                        <button class="btn btn-secondary btn-small" onclick="addMeal('lunch')">
+                            + Aggiungi
+                        </button>
+                    </div>
+
+                    <div class="meal-card">
+                        <div class="meal-header">
+                            <h3>🥜 Spuntino Pomeriggio</h3>
+                            <span class="meal-time">16:30</span>
+                        </div>
+                        <div class="meal-content" id="snack2Content">
+                            <p class="meal-empty">Nessun pasto registrato</p>
+                        </div>
+                        <button class="btn btn-secondary btn-small" onclick="addMeal('snack2')">
+                            + Aggiungi
+                        </button>
+                    </div>
+
+                    <div class="meal-card">
+                        <div class="meal-header">
+                            <h3>🌙 Cena</h3>
+                            <span class="meal-time">20:00</span>
+                        </div>
+                        <div class="meal-content" id="dinnerContent">
+                            <p class="meal-empty">Nessun pasto registrato</p>
+                        </div>
+                        <button class="btn btn-secondary btn-small" onclick="addMeal('dinner')">
+                            + Aggiungi
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Quick Stats -->
+            <section class="dashboard-section">
+                <h2 class="section-title">Statistiche Settimana</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Aderenza Piano</div>
+                        <div class="stat-value">85%</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 85%"></div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Giorni Consecutivi</div>
+                        <div class="stat-value">7</div>
+                        <div class="stat-trend">🔥 Serie attiva!</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Media Calorie</div>
+                        <div class="stat-value">1,750</div>
+                        <div class="stat-trend">📈 -50 vs target</div>
+                    </div>
+                </div>
+            </section>
         </main>
     </div>
 
-    <!-- Modal for Add/Edit Food -->
-    <div class="modal" id="foodModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 id="modalTitle">Aggiungi Nuovo Alimento</h2>
-                <button class="modal-close" onclick="closeFoodModal()">×</button>
-            </div>
-            <div class="modal-body">
-                <form class="form-grid" id="foodForm">
-                    <div class="form-group">
-                        <label class="form-label">Nome Alimento *</label>
-                        <input type="text" class="form-input" id="foodName" required>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Categoria *</label>
-                            <select class="form-input" id="foodCategory" required>
-                                <option value="">Seleziona categoria</option>
-                                <option value="proteine">Proteine</option>
-                                <option value="carboidrati">Carboidrati</option>
-                                <option value="verdure">Verdure</option>
-                                <option value="frutta">Frutta</option>
-                                <option value="frutta_secca">Frutta Secca</option>
-                                <option value="grassi_condimenti">Grassi e Condimenti</option>
-                                <option value="legumi">Legumi</option>
-                                <option value="bevande">Bevande</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Porzione Standard (g/ml) *</label>
-                            <input type="number" class="form-input" id="foodPortion" required>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Calorie (per 100g) *</label>
-                            <input type="number" class="form-input" id="foodCalories" step="0.1" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Proteine (g/100g) *</label>
-                            <input type="number" class="form-input" id="foodProteins" step="0.1" required>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Grassi (g/100g) *</label>
-                            <input type="number" class="form-input" id="foodFats" step="0.1" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Carboidrati (g/100g) *</label>
-                            <input type="number" class="form-input" id="foodCarbs" step="0.1" required>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Fibre (g/100g)</label>
-                            <input type="number" class="form-input" id="foodFiber" step="0.1">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Zuccheri (g/100g)</label>
-                            <input type="number" class="form-input" id="foodSugars" step="0.1">
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Sodio (mg/100g)</label>
-                            <input type="number" class="form-input" id="foodSodium" step="0.1">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Indice Glicemico</label>
-                            <input type="number" class="form-input" id="foodGI" min="0" max="100">
-                        </div>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeFoodModal()">Annulla</button>
-                <button class="btn btn-primary" onclick="saveFood()">Salva Alimento</button>
-            </div>
-        </div>
-    </div>
-
+    <!-- Scripts -->
+    <script src="js/database.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/app.js"></script>
     <script>
-        // Import del database (in produzione questo verrebbe da un file esterno o API)
-        const dietaDB = {
-            "categorie": {
-                "proteine": {
-                    "nome": "Proteine",
-                    "descrizione": "Fonti proteiche principali",
-                    "alimenti": [
-                        {
-                            "id": "pollo_grigliato",
-                            "nome": "Pollo grigliato",
-                            "categoria": "proteine",
-                            "porzione_standard": 150,
-                            "unita_misura": "g",
-                            "calorie_per_100g": 165,
-                            "proteine_per_100g": 31,
-                            "grassi_per_100g": 3.6,
-                            "carboidrati_per_100g": 0,
-                            "fibre_per_100g": 0,
-                            "sodio_per_100g": 74,
-                            "indice_glicemico": 0
-                        },
-                        {
-                            "id": "merluzzo_vapore",
-                            "nome": "Merluzzo al vapore",
-                            "categoria": "proteine",
-                            "porzione_standard": 150,
-                            "unita_misura": "g",
-                            "calorie_per_100g": 82,
-                            "proteine_per_100g": 18,
-                            "grassi_per_100g": 0.7,
-                            "carboidrati_per_100g": 0,
-                            "fibre_per_100g": 0,
-                            "sodio_per_100g": 54,
-                            "indice_glicemico": 0
-                        }
-                    ]
-                },
-                "verdure": {
-                    "nome": "Verdure",
-                    "descrizione": "Verdure crude e cotte",
-                    "alimenti": [
-                        {
-                            "id": "zucchine",
-                            "nome": "Zucchine",
-                            "categoria": "verdure",
-                            "porzione_standard": 150,
-                            "unita_misura": "g",
-                            "calorie_per_100g": 17,
-                            "proteine_per_100g": 1.2,
-                            "grassi_per_100g": 0.3,
-                            "carboidrati_per_100g": 3.1,
-                            "fibre_per_100g": 1,
-                            "sodio_per_100g": 8,
-                            "indice_glicemico": 15
-                        }
-                    ]
-                }
-            }
-        };
-
-        // State dell'applicazione
-        let currentEditingFood = null;
-        let filteredCategory = '';
-        let searchTerm = '';
-
-        // Funzione per renderizzare le categorie
-        function renderCategories() {
-            const grid = document.getElementById('categoriesGrid');
-            grid.innerHTML = '';
-
-            Object.entries(dietaDB.categorie).forEach(([categoryId, category]) => {
-                if (filteredCategory && categoryId !== filteredCategory) return;
-
-                const filteredAlimenti = category.alimenti.filter(food => 
-                    food.nome.toLowerCase().includes(searchTerm.toLowerCase())
-                );
-
-                if (filteredAlimenti.length === 0 && searchTerm) return;
-
-                const categorySection = document.createElement('div');
-                categorySection.className = 'category-section';
-                categorySection.innerHTML = `
-                    <div class="category-header">
-                        <h2>${category.nome}</h2>
-                        <span class="category-count">${filteredAlimenti.length} alimenti</span>
-                    </div>
-                    <table class="food-table">
-                        <thead>
-                            <tr>
-                                <th>Alimento</th>
-                                <th>Porzione</th>
-                                <th>Calorie</th>
-                                <th>Proteine</th>
-                                <th class="nutrient-mobile-hide">Grassi</th>
-                                <th class="nutrient-mobile-hide">Carb.</th>
-                                <th>Azioni</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${filteredAlimenti.map(food => `
-                                <tr>
-                                    <td class="food-name">${food.nome}</td>
-                                    <td class="nutrient-value">${food.porzione_standard}${food.unita_misura || 'g'}</td>
-                                    <td class="nutrient-value">${food.calorie_per_100g || food.calorie_per_unita} kcal</td>
-                                    <td class="nutrient-value">${food.proteine_per_100g || food.proteine_per_unita}g</td>
-                                    <td class="nutrient-value nutrient-mobile-hide">${food.grassi_per_100g || food.grassi_per_unita}g</td>
-                                    <td class="nutrient-value nutrient-mobile-hide">${food.carboidrati_per_100g || food.carboidrati_per_unita}g</td>
-                                    <td class="actions-cell">
-                                        <button class="btn-icon edit" onclick="editFood('${categoryId}', '${food.id}')" title="Modifica">
-                                            ✏️
-                                        </button>
-                                        <button class="btn-icon delete" onclick="deleteFood('${categoryId}', '${food.id}')" title="Elimina">
-                                            🗑️
-                                        </button>
-                                    </td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                `;
-                grid.appendChild(categorySection);
-            });
-        }
-
-        // Funzioni per il modal
-        function openAddFoodModal() {
-            currentEditingFood = null;
-            document.getElementById('modalTitle').textContent = 'Aggiungi Nuovo Alimento';
-            document.getElementById('foodForm').reset();
-            document.getElementById('foodModal').classList.add('active');
-        }
-
-        function closeFoodModal() {
-            document.getElementById('foodModal').classList.remove('active');
-            currentEditingFood = null;
-        }
-
-        function editFood(categoryId, foodId) {
-            const food = dietaDB.categorie[categoryId].alimenti.find(f => f.id === foodId);
-            if (!food) return;
-
-            currentEditingFood = { categoryId, foodId };
-            document.getElementById('modalTitle').textContent = 'Modifica Alimento';
-            
-            // Popola il form
-            document.getElementById('foodName').value = food.nome;
-            document.getElementById('foodCategory').value = food.categoria;
-            document.getElementById('foodPortion').value = food.porzione_standard;
-            document.getElementById('foodCalories').value = food.calorie_per_100g || '';
-            document.getElementById('foodProteins').value = food.proteine_per_100g || '';
-            document.getElementById('foodFats').value = food.grassi_per_100g || '';
-            document.getElementById('foodCarbs').value = food.carboidrati_per_100g || '';
-            document.getElementById('foodFiber').value = food.fibre_per_100g || '';
-            document.getElementById('foodSugars').value = food.zuccheri_per_100g || '';
-            document.getElementById('foodSodium').value = food.sodio_per_100g || '';
-            document.getElementById('foodGI').value = food.indice_glicemico || '';
-            
-            document.getElementById('foodModal').classList.add('active');
-        }
-
-        function saveFood() {
-            const formData = {
-                nome: document.getElementById('foodName').value,
-                categoria: document.getElementById('foodCategory').value,
-                porzione_standard: parseFloat(document.getElementById('foodPortion').value),
-                calorie_per_100g: parseFloat(document.getElementById('foodCalories').value),
-                proteine_per_100g: parseFloat(document.getElementById('foodProteins').value),
-                grassi_per_100g: parseFloat(document.getElementById('foodFats').value),
-                carboidrati_per_100g: parseFloat(document.getElementById('foodCarbs').value),
-                fibre_per_100g: parseFloat(document.getElementById('foodFiber').value) || 0,
-                zuccheri_per_100g: parseFloat(document.getElementById('foodSugars').value) || 0,
-                sodio_per_100g: parseFloat(document.getElementById('foodSodium').value) || 0,
-                indice_glicemico: parseFloat(document.getElementById('foodGI').value) || 0,
-                unita_misura: 'g'
-            };
-
-            if (currentEditingFood) {
-                // Modifica alimento esistente
-                const { categoryId, foodId } = currentEditingFood;
-                const foodIndex = dietaDB.categorie[categoryId].alimenti.findIndex(f => f.id === foodId);
-                if (foodIndex !== -1) {
-                    dietaDB.categorie[categoryId].alimenti[foodIndex] = {
-                        ...dietaDB.categorie[categoryId].alimenti[foodIndex],
-                        ...formData
-                    };
-                }
-            } else {
-                // Aggiungi nuovo alimento
-                const id = formData.nome.toLowerCase().replace(/\s+/g, '_');
-                const newFood = {
-                    id,
-                    ...formData,
-                    tipo: formData.categoria
-                };
-                
-                if (!dietaDB.categorie[formData.categoria]) {
-                    alert('Categoria non valida');
-                    return;
-                }
-                
-                dietaDB.categorie[formData.categoria].alimenti.push(newFood);
-            }
-
-            closeFoodModal();
-            renderCategories();
-            showSuccessMessage(currentEditingFood ? 'Alimento modificato con successo!' : 'Alimento aggiunto con successo!');
-        }
-
-        function deleteFood(categoryId, foodId) {
-            if (confirm('Sei sicuro di voler eliminare questo alimento?')) {
-                dietaDB.categorie[categoryId].alimenti = dietaDB.categorie[categoryId].alimenti.filter(f => f.id !== foodId);
-                renderCategories();
-                showSuccessMessage('Alimento eliminato con successo!');
-            }
-        }
-
-        function showSuccessMessage(message) {
-            // In produzione, questo sarebbe un toast/notifica più sofisticato
+        // Funzione per mostrare notifiche (duplicata qui per evitare problemi di caricamento)
+        function showNotification(message, type = 'success') {
             const notification = document.createElement('div');
             notification.style.cssText = `
                 position: fixed;
                 top: 20px;
                 right: 20px;
-                background: var(--secondary-color);
+                background: ${type === 'success' ? '#10b981' : '#ef4444'};
                 color: white;
                 padding: 1rem 1.5rem;
                 border-radius: 0.375rem;
-                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
                 z-index: 1001;
+                animation: slideIn 0.3s ease-out;
             `;
             notification.textContent = message;
             document.body.appendChild(notification);
             
             setTimeout(() => {
-                notification.remove();
+                notification.style.animation = 'slideOut 0.3s ease-out';
+                setTimeout(() => notification.remove(), 300);
             }, 3000);
         }
 
-        // Event listeners
-        document.getElementById('searchInput').addEventListener('input', (e) => {
-            searchTerm = e.target.value;
-            renderCategories();
-        });
+        // Override della funzione addMeal per il testing
+        function addMeal(mealType) {
+            const mealNames = {
+                breakfast: 'colazione',
+                snack1: 'spuntino mattina',
+                lunch: 'pranzo',
+                snack2: 'spuntino pomeriggio',
+                dinner: 'cena'
+            };
+            
+            console.log(`Aggiungi ${mealNames[mealType]}`);
+            showNotification(`Funzionalità in arrivo! Per ora usa la sezione Impostazioni per vedere gli alimenti.`, 'info');
+        }
 
-        document.getElementById('categoryFilter').addEventListener('change', (e) => {
-            filteredCategory = e.target.value;
-            renderCategories();
-        });
-
-        // Close modal when clicking outside
-        document.getElementById('foodModal').addEventListener('click', (e) => {
-            if (e.target.id === 'foodModal') {
-                closeFoodModal();
+        // Aggiungi animazioni CSS
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
             }
-        });
-
-        // Initialize
-        renderCategories();
+            
+            @keyframes slideOut {
+                from {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+                to {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+            }
+        `;
+        document.head.appendChild(style);
     </script>
 </body>
 </html>
