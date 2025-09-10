@@ -189,12 +189,425 @@
             weekData: []
         };
 
+        let currentMealType = '';
+        let selectedMealFoods = [];
+
         // Inizializza dashboard
         document.addEventListener('DOMContentLoaded', function() {
             // Imposta la data
             const date = new Date();
             const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
             document.getElementById('currentDate').textContent = date.toLocaleDateString('it-IT', options);
+            
+            // Carica dati
+            loadDashboardData();
+            updateWeeklyStatistics();
+            
+            // Setup event listeners
+            setupDashboardEventListeners();
+        });
+
+        // Setup event listeners
+        function setupDashboardEventListeners() {
+            // Ricerca alimenti nel modal - controlla se esiste
+            const mealSearchInput = document.getElementById('mealSearchInput');
+            if (mealSearchInput) {
+                mealSearchInput.addEventListener('input', debounce((e) => {
+                    searchFoodsForDashboard(e.target.value);
+                }, 300));
+            }
+            
+            // Click fuori dal modal per chiudere - controlla se esiste
+            const mealModal = document.getElementById('mealModal');
+            if (mealModal) {
+                mealModal.addEventListener('click', (e) => {
+                    if (e.target.id === 'mealModal') {
+                        closeMealModal();
+                    }
+                });
+            }
+        }
+
+        // Carica dati dashboard
+        function loadDashboardData() {
+            // Carica i pasti di oggi se salvati
+            const savedToday = localStorage.getItem('todayMeals');
+            if (savedToday) {
+                const data = JSON.parse(savedToday);
+                const today = new Date().toISOString().split('T')[0];
+                if (data.date === today) {
+                    dashboardState.todayMeals = data.meals;
+                    updateDailySummary();
+                    updateMealsDisplay();
+                }
+            }
+
+            // Carica dati settimanali se presenti
+            const weekData = localStorage.getItem('weekData');
+            if (weekData) {
+                dashboardState.weekData = JSON.parse(weekData);
+            }
+        }
+
+        // Salva pasti di oggi
+        function saveTodayMeals() {
+            const dataToSave = {
+                date: new Date().toISOString().split('T')[0],
+                meals: dashboardState.todayMeals
+            };
+            localStorage.setItem('todayMeals', JSON.stringify(dataToSave));
+        }
+
+        // Aggiorna riepilogo giornaliero
+        function updateDailySummary() {
+            let totals = {
+                calories: 0,
+                proteins: 0,
+                fats: 0,
+                carbs: 0
+            };
+
+            // Calcola totali dai pasti
+            Object.values(dashboardState.todayMeals).forEach(mealFoods => {
+                mealFoods.forEach(food => {
+                    totals.calories += food.calories || 0;
+                    totals.proteins += food.proteins || 0;
+                    totals.fats += food.fats || 0;
+                    totals.carbs += food.carbs || 0;
+                });
+            });
+
+            // Aggiorna UI
+            document.getElementById('todayCalories').textContent = Math.round(totals.calories);
+            document.getElementById('todayProteins').textContent = `${Math.round(totals.proteins)}g`;
+            document.getElementById('todayFats').textContent = `${Math.round(totals.fats)}g`;
+            document.getElementById('todayCarbs').textContent = `${Math.round(totals.carbs)}g`;
+        }
+
+        // Aggiorna visualizzazione pasti
+        function updateMealsDisplay() {
+            const mealTypes = ['breakfast', 'snack1', 'lunch', 'snack2', 'dinner'];
+            
+            mealTypes.forEach(mealType => {
+                const contentEl = document.getElementById(`${mealType}Content`);
+                if (contentEl) {
+                    const foods = dashboardState.todayMeals[mealType];
+                    
+                    if (foods.length === 0) {
+                        contentEl.innerHTML = '<p class="meal-empty">Nessun pasto registrato</p>';
+                    } else {
+                        contentEl.innerHTML = foods.map((food, index) => `
+                            <div class="meal-item" style="display: flex; justify-content: space-between; padding: 0.5rem 0; align-items: center;">
+                                <span>${food.name} (${food.portion}${food.unit})</span>
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <span style="color: var(--text-secondary);">${Math.round(food.calories)} kcal</span>
+                                    <button class="btn-icon delete" onclick="removeMealItem('${mealType}', ${index})" title="Rimuovi">
+                                        🗑️
+                                    </button>
+                                </div>
+                            </div>
+                        `).join('');
+                    }
+                }
+            });
+        }
+
+        // Rimuovi alimento dal pasto
+        function removeMealItem(mealType, index) {
+            dashboardState.todayMeals[mealType].splice(index, 1);
+            saveTodayMeals();
+            updateDailySummary();
+            updateMealsDisplay();
+            showNotification('Alimento rimosso');
+        }
+
+        // Aggiorna statistiche settimanali
+        function updateWeeklyStatistics() {
+            // Se non ci sono dati, i valori sono già a 0 nell'HTML
+            if (!dashboardState.weekData || dashboardState.weekData.length === 0) {
+                return; // Lascia i valori di default
+            }
+
+            // Calcola statistiche reali
+            const today = new Date();
+            const lastWeek = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+            
+            // Filtra dati ultima settimana
+            const weekStats = dashboardState.weekData.filter(day => {
+                const dayDate = new Date(day.date);
+                return dayDate >= lastWeek && dayDate <= today;
+            });
+
+            // Calcola aderenza (giorni con pasti registrati / 7)
+            const daysWithMeals = weekStats.filter(day => day.totalCalories > 0).length;
+            const adherence = Math.round((daysWithMeals / 7) * 100);
+            document.getElementById('weekAdherence').textContent = `${adherence}%`;
+            document.getElementById('adherenceBar').style.width = `${adherence}%`;
+
+            // Calcola giorni consecutivi
+            let consecutiveDays = 0;
+            for (let i = weekStats.length - 1; i >= 0; i--) {
+                if (weekStats[i].totalCalories > 0) {
+                    consecutiveDays++;
+                } else {
+                    break;
+                }
+            }
+            document.getElementById('consecutiveDays').textContent = consecutiveDays;
+            document.getElementById('streakStatus').textContent = 
+                consecutiveDays > 0 ? '🔥 Serie attiva!' : 'Inizia oggi!';
+
+            // Calcola media calorie
+            const totalCalories = weekStats.reduce((sum, day) => sum + (day.totalCalories || 0), 0);
+            const avgCalories = daysWithMeals > 0 ? Math.round(totalCalories / daysWithMeals) : 0;
+            document.getElementById('avgCalories').textContent = avgCalories.toLocaleString('it-IT');
+            
+            // Calcola trend vs target
+            const target = 1800; // Target giornaliero
+            const diff = avgCalories - target;
+            if (avgCalories === 0) {
+                document.getElementById('caloriesTrend').textContent = 'Nessun dato';
+            } else {
+                document.getElementById('caloriesTrend').textContent = 
+                    diff > 0 ? `📈 +${diff} vs target` : `📉 ${diff} vs target`;
+            }
+        }
+
+        // Funzione per mostrare notifiche
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${type === 'success' ? '#10b981' : type === 'info' ? '#3b82f6' : '#ef4444'};
+                color: white;
+                padding: 1rem 1.5rem;
+                border-radius: 0.375rem;
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+                z-index: 1001;
+                animation: slideIn 0.3s ease-out;
+            `;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease-out';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+
+        // Funzione per aggiungere pasto
+        function addMeal(mealType) {
+            currentMealType = mealType;
+            selectedMealFoods = [];
+            
+            const mealNames = {
+                breakfast: 'Colazione',
+                snack1: 'Spuntino Mattina',
+                lunch: 'Pranzo',
+                snack2: 'Spuntino Pomeriggio',
+                dinner: 'Cena'
+            };
+            
+            document.getElementById('mealModalTitle').textContent = `Aggiungi ${mealNames[mealType]}`;
+            document.getElementById('mealModal').classList.add('active');
+            document.getElementById('mealSearchInput').value = '';
+            renderMealSelectedFoods();
+            searchFoodsForDashboard('');
+        }
+
+        // Chiudi modal pasto
+        function closeMealModal() {
+            document.getElementById('mealModal').classList.remove('active');
+            currentMealType = '';
+            selectedMealFoods = [];
+        }
+
+        // Cerca alimenti per dashboard
+        function searchFoodsForDashboard(searchTerm) {
+            const results = searchFoods(searchTerm);
+            const resultsDiv = document.getElementById('mealSearchResults');
+            
+            resultsDiv.innerHTML = results.map(food => `
+                <div style="padding: 0.5rem; border: 1px solid var(--border-color); margin-bottom: 0.5rem; border-radius: 0.375rem; cursor: pointer;"
+                     onclick="addFoodToDashboardMeal('${food.id}')">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span><strong>${food.nome}</strong> - ${food.categoriaNome}</span>
+                        <button class="btn btn-small btn-primary">+ Aggiungi</button>
+                    </div>
+                    <div style="font-size: 0.813rem; color: var(--text-secondary); margin-top: 0.25rem;">
+                        ${food.porzione_standard}${food.unita_misura || 'g'} • 
+                        ${food.calorie_per_100g || food.calorie_per_unita} kcal
+                    </div>
+                </div>
+            `).join('') || '<p style="text-align: center; color: var(--text-secondary);">Nessun alimento trovato</p>';
+        }
+
+        // Aggiungi alimento al pasto dashboard
+        function addFoodToDashboardMeal(foodId) {
+            const food = getFoodById(foodId);
+            if (!food) return;
+            
+            const nutrition = calculateNutritionForPortion(food, food.porzione_standard);
+            
+            selectedMealFoods.push({
+                id: foodId,
+                name: food.nome,
+                portion: food.porzione_standard,
+                unit: food.unita_misura || 'g',
+                calories: nutrition.calories,
+                proteins: nutrition.proteins,
+                fats: nutrition.fats,
+                carbs: nutrition.carbs
+            });
+            
+            renderMealSelectedFoods();
+        }
+
+        // Renderizza alimenti selezionati per il pasto
+        function renderMealSelectedFoods() {
+            const listDiv = document.getElementById('selectedMealFoodsList');
+            
+            if (selectedMealFoods.length === 0) {
+                listDiv.innerHTML = '<p style="color: var(--text-secondary);">Nessun alimento selezionato</p>';
+                return;
+            }
+            
+            listDiv.innerHTML = selectedMealFoods.map((item, index) => `
+                <div style="padding: 0.5rem; border: 1px solid var(--border-color); margin-bottom: 0.5rem; border-radius: 0.375rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span>${item.name} - ${item.portion}${item.unit}</span>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <span style="color: var(--text-secondary);">${Math.round(item.calories)} kcal</span>
+                            <button class="btn-icon delete" onclick="removeFromSelectedMeal(${index})">🗑️</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Rimuovi da selezione
+        function removeFromSelectedMeal(index) {
+            selectedMealFoods.splice(index, 1);
+            renderMealSelectedFoods();
+        }
+
+        // Salva pasto nella dashboard
+        function saveMealToDashboard() {
+            if (selectedMealFoods.length === 0) {
+                showNotification('Seleziona almeno un alimento', 'error');
+                return;
+            }
+            
+            // Aggiungi alimenti al pasto
+            dashboardState.todayMeals[currentMealType] = [
+                ...dashboardState.todayMeals[currentMealType],
+                ...selectedMealFoods
+            ];
+            
+            // Salva e aggiorna
+            saveTodayMeals();
+            updateDailySummary();
+            updateMealsDisplay();
+            closeMealModal();
+            showNotification('Pasto aggiunto con successo!');
+        }
+
+        // Aggiungi funzione di ricerca alimenti mancante
+        function searchFoods(searchTerm, category = null) {
+            const results = [];
+            const term = searchTerm.toLowerCase();
+            
+            // Verifica che dietaDB esista
+            if (typeof dietaDB === 'undefined') {
+                console.error('Database non caricato');
+                return results;
+            }
+            
+            Object.entries(dietaDB.categorie).forEach(([catId, catData]) => {
+                if (category && catId !== category) return;
+                
+                catData.alimenti.forEach(food => {
+                    if (food.nome.toLowerCase().includes(term) || 
+                        food.id.toLowerCase().includes(term)) {
+                        results.push({
+                            ...food,
+                            categoriaId: catId,
+                            categoriaNome: catData.nome
+                        });
+                    }
+                });
+            });
+            
+            return results;
+        }
+
+        // Aggiungi funzione per calcolare nutrienti
+        function calculateNutritionForPortion(food, portion) {
+            const multiplier = portion / 100;
+            
+            // Se l'alimento ha valori per unità invece che per 100g
+            if (food.calorie_per_unita) {
+                const units = portion / (food.porzione_standard || 1);
+                return {
+                    calories: (food.calorie_per_unita || 0) * units,
+                    proteins: (food.proteine_per_unita || 0) * units,
+                    fats: (food.grassi_per_unita || 0) * units,
+                    carbs: (food.carboidrati_per_unita || 0) * units,
+                    fiber: (food.fibre_per_unita || 0) * units
+                };
+            }
+            
+            // Calcolo standard per 100g
+            return {
+                calories: (food.calorie_per_100g || 0) * multiplier,
+                proteins: (food.proteine_per_100g || 0) * multiplier,
+                fats: (food.grassi_per_100g || 0) * multiplier,
+                carbs: (food.carboidrati_per_100g || 0) * multiplier,
+                fiber: (food.fibre_per_100g || 0) * multiplier
+            };
+        }
+
+        // Aggiungi animazioni CSS
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+            
+            @keyframes slideOut {
+                from {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+                to {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+            }
+            
+            .meal-item:hover {
+                background-color: var(--hover-bg);
+                margin: 0 -0.5rem;
+                padding: 0.5rem !important;
+                border-radius: 0.375rem;
+                transition: all 0.2s;
+            }
+
+            .btn-icon.delete:hover {
+                color: var(--danger-color);
+            }
+        `;
+        document.head.appendChild(style);
+    </script>IT', options);
             
             // Carica dati
             loadDashboardData();
