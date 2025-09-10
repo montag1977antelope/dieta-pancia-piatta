@@ -152,20 +152,20 @@
                 <div class="stats-grid">
                     <div class="stat-card">
                         <div class="stat-label">Aderenza Piano</div>
-                        <div class="stat-value">85%</div>
+                        <div class="stat-value" id="weekAdherence">0%</div>
                         <div class="progress-bar">
-                            <div class="progress-fill" style="width: 85%"></div>
+                            <div class="progress-fill" id="adherenceBar" style="width: 0%"></div>
                         </div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-label">Giorni Consecutivi</div>
-                        <div class="stat-value">7</div>
-                        <div class="stat-trend">🔥 Serie attiva!</div>
+                        <div class="stat-value" id="consecutiveDays">0</div>
+                        <div class="stat-trend" id="streakStatus">Inizia oggi!</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-label">Media Calorie</div>
-                        <div class="stat-value">1,750</div>
-                        <div class="stat-trend">📈 -50 vs target</div>
+                        <div class="stat-value" id="avgCalories">0</div>
+                        <div class="stat-trend" id="caloriesTrend">Nessun dato</div>
                     </div>
                 </div>
             </section>
@@ -191,6 +191,12 @@
 
         // Inizializza dashboard
         document.addEventListener('DOMContentLoaded', function() {
+            // Imposta la data
+            const date = new Date();
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('currentDate').textContent = date.toLocaleDateString('it-IT', options);
+            
+            // Carica dati
             loadDashboardData();
             updateWeeklyStatistics();
         });
@@ -267,15 +273,9 @@
 
         // Aggiorna statistiche settimanali
         function updateWeeklyStatistics() {
-            // Se non ci sono dati, mostra valori di default
+            // Se non ci sono dati, i valori sono già a 0 nell'HTML
             if (!dashboardState.weekData || dashboardState.weekData.length === 0) {
-                document.getElementById('weekAdherence').textContent = '0%';
-                document.getElementById('adherenceBar').style.width = '0%';
-                document.getElementById('consecutiveDays').textContent = '0';
-                document.getElementById('streakStatus').textContent = 'Inizia oggi!';
-                document.getElementById('avgCalories').textContent = '0';
-                document.getElementById('caloriesTrend').textContent = 'Nessun dato';
-                return;
+                return; // Lascia i valori di default
             }
 
             // Calcola statistiche reali
