@@ -22,19 +22,13 @@
             align-items: center;
             box-shadow: var(--shadow);
         }
-
-        .categories-grid {
-            display: grid;
-            gap: 1.5rem;
-        }
-
+        .categories-grid { display: grid; gap: 1.5rem; }
         .category-section {
             background-color: var(--surface);
             border-radius: 0.5rem;
             overflow: hidden;
             box-shadow: var(--shadow);
         }
-
         .category-header {
             padding: 1rem 1.5rem;
             background-color: var(--primary-color);
@@ -43,62 +37,24 @@
             justify-content: space-between;
             align-items: center;
         }
-
         .category-count {
             background-color: rgba(255, 255, 255, 0.2);
             padding: 0.25rem 0.75rem;
             border-radius: 1rem;
             font-size: 0.875rem;
         }
-
-        .food-name {
-            font-weight: 500;
-        }
-
-        .nutrient-value {
-            color: var(--text-secondary);
-            font-size: 0.875rem;
-        }
-
-        .actions-cell {
-            display: flex;
-            gap: 0.5rem;
-            justify-content: flex-end;
-        }
-
-        .btn-icon.edit:hover {
-            color: var(--primary-color);
-        }
-
-        .btn-icon.delete:hover {
-            color: var(--danger-color);
-        }
-
-        .form-grid {
-            display: grid;
-            gap: 1.5rem;
-        }
-
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-        }
-
+        .food-name { font-weight: 500; }
+        .nutrient-value { color: var(--text-secondary); font-size: 0.875rem; }
+        .actions-cell { display: flex; gap: 0.5rem; justify-content: flex-end; }
+        .btn-icon.edit:hover { color: var(--primary-color); }
+        .btn-icon.delete:hover { color: var(--danger-color); }
+        .form-grid { display: grid; gap: 1.5rem; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
         .modal-close {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: var(--text-secondary);
+            background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-secondary);
         }
     </style>
 </head>
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js'));
-  }
-</script>    
 <body>
     <div class="app-container">
         <!-- Header -->
@@ -258,30 +214,12 @@
                             📊 Valori Nutrizionali per Porzione
                         </div>
                         <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; font-size: 0.875rem;">
-                            <div>
-                                <span style="color: var(--text-secondary);">Calorie:</span>
-                                <strong id="portionCalories">0</strong> kcal
-                            </div>
-                            <div>
-                                <span style="color: var(--text-secondary);">Proteine:</span>
-                                <strong id="portionProteins">0</strong>g
-                            </div>
-                            <div>
-                                <span style="color: var(--text-secondary);">Grassi:</span>
-                                <strong id="portionFats">0</strong>g
-                            </div>
-                            <div>
-                                <span style="color: var(--text-secondary);">Carboidrati:</span>
-                                <strong id="portionCarbs">0</strong>g
-                            </div>
-                            <div>
-                                <span style="color: var(--text-secondary);">Fibre:</span>
-                                <strong id="portionFiber">0</strong>g
-                            </div>
-                            <div>
-                                <span style="color: var(--text-secondary);">Zuccheri:</span>
-                                <strong id="portionSugars">0</strong>g
-                            </div>
+                            <div><span style="color: var(--text-secondary);">Calorie:</span> <strong id="portionCalories">0</strong> kcal</div>
+                            <div><span style="color: var(--text-secondary);">Proteine:</span> <strong id="portionProteins">0</strong>g</div>
+                            <div><span style="color: var(--text-secondary);">Grassi:</span> <strong id="portionFats">0</strong>g</div>
+                            <div><span style="color: var(--text-secondary);">Carboidrati:</span> <strong id="portionCarbs">0</strong>g</div>
+                            <div><span style="color: var(--text-secondary);">Fibre:</span> <strong id="portionFiber">0</strong>g</div>
+                            <div><span style="color: var(--text-secondary);">Zuccheri:</span> <strong id="portionSugars">0</strong>g</div>
                         </div>
                     </div>
                 </form>
@@ -293,25 +231,33 @@
         </div>
     </div>
 
-    <!-- Scripts -->
+    <!-- Scripts: ORDINE GIUSTO -->
     <script src="../js/database.js"></script>
     <script src="../js/utils.js"></script>
+
     <script>
+        // Fallback notifica se non esiste showNotification()
+        function showNotification(msg, type='success'){
+            if (window.showNotification) return window.showNotification(msg, type);
+            const n = document.createElement('div');
+            n.style.cssText = `position:fixed;top:20px;right:20px;background:${type==='error'?'#ef4444':type==='info'?'#3b82f6':'#10b981'};color:#fff;padding:.75rem 1rem;border-radius:.5rem;z-index:9999`;
+            n.textContent = msg; document.body.appendChild(n);
+            setTimeout(()=> n.remove(), 2200);
+        }
+
         // State della pagina settings
         let currentEditingFood = null;
         let filteredCategory = '';
         let searchTerm = '';
         let currentDatabase = loadDatabase();
 
-        // Inizializzazione
         document.addEventListener('DOMContentLoaded', function() {
             renderCategories();
             setupEventListeners();
         });
 
-        // Setup event listeners
         function setupEventListeners() {
-            document.getElementById('searchInput').addEventListener('input', debounce((e) => {
+            document.getElementById('searchInput').addEventListener('input', DietUtils.debounce((e) => {
                 searchTerm = e.target.value;
                 renderCategories();
             }, 300));
@@ -321,33 +267,29 @@
                 renderCategories();
             });
 
-            // Event listeners per validazione in tempo reale
-            const nutritionInputs = ['foodCalories', 'foodProteins', 'foodFats', 'foodCarbs', 'foodPortion', 'foodFiber', 'foodSugars'];
-            nutritionInputs.forEach(inputId => {
-                document.getElementById(inputId).addEventListener('input', () => {
+            const nutritionInputs = ['foodCalories','foodProteins','foodFats','foodCarbs','foodPortion','foodFiber','foodSugars'];
+            nutritionInputs.forEach(id => {
+                document.getElementById(id).addEventListener('input', () => {
                     updateMacroValidation();
                     updatePortionValues();
                 });
             });
 
-            // Close modal when clicking outside
+            // Chiudi modal cliccando fuori
             document.getElementById('foodModal').addEventListener('click', (e) => {
-                if (e.target.id === 'foodModal') {
-                    closeFoodModal();
-                }
+                if (e.target.id === 'foodModal') closeFoodModal();
             });
         }
 
-        // Renderizza categorie e alimenti
         function renderCategories() {
             const grid = document.getElementById('categoriesGrid');
             grid.innerHTML = '';
 
-            Object.entries(currentDatabase.categorie).forEach(([categoryId, category]) => {
+            Object.entries(currentDatabase.categorie || {}).forEach(([categoryId, category]) => {
                 if (filteredCategory && categoryId !== filteredCategory) return;
 
-                const filteredAlimenti = category.alimenti.filter(food => 
-                    food.nome.toLowerCase().includes(searchTerm.toLowerCase())
+                const filteredAlimenti = (category.alimenti || []).filter(food =>
+                    food.nome.toLowerCase().includes((searchTerm||'').toLowerCase())
                 );
 
                 if (filteredAlimenti.length === 0 && searchTerm) return;
@@ -381,12 +323,8 @@
                                     <td class="nutrient-value nutrient-mobile-hide">${food.grassi_per_100g || food.grassi_per_unita}g</td>
                                     <td class="nutrient-value nutrient-mobile-hide">${food.carboidrati_per_100g || food.carboidrati_per_unita}g</td>
                                     <td class="actions-cell">
-                                        <button class="btn-icon edit" onclick="editFood('${categoryId}', '${food.id}')" title="Modifica">
-                                            ✏️
-                                        </button>
-                                        <button class="btn-icon delete" onclick="deleteFood('${categoryId}', '${food.id}')" title="Elimina">
-                                            🗑️
-                                        </button>
+                                        <button class="btn-icon edit" onclick="editFood('${categoryId}', '${food.id}')" title="Modifica">✏️</button>
+                                        <button class="btn-icon delete" onclick="deleteFood('${categoryId}', '${food.id}')" title="Elimina">🗑️</button>
                                     </td>
                                 </tr>
                             `).join('')}
@@ -397,7 +335,7 @@
             });
         }
 
-        // Funzioni Modal
+        // Modal
         function openAddFoodModal() {
             currentEditingFood = null;
             document.getElementById('modalTitle').textContent = 'Aggiungi Nuovo Alimento';
@@ -406,61 +344,56 @@
             updateMacroValidation();
             updatePortionValues();
         }
-
         function closeFoodModal() {
             document.getElementById('foodModal').classList.remove('active');
             currentEditingFood = null;
         }
 
         function editFood(categoryId, foodId) {
-            const food = currentDatabase.categorie[categoryId].alimenti.find(f => f.id === foodId);
+            const food = (currentDatabase.categorie[categoryId]?.alimenti || []).find(f => f.id === foodId);
             if (!food) return;
 
             currentEditingFood = { categoryId, foodId };
             document.getElementById('modalTitle').textContent = 'Modifica Alimento';
-            
-            // Popola il form
-            document.getElementById('foodName').value = food.nome;
-            document.getElementById('foodCategory').value = food.categoria;
-            document.getElementById('foodPortion').value = food.porzione_standard;
-            document.getElementById('foodCalories').value = food.calorie_per_100g || '';
-            document.getElementById('foodProteins').value = food.proteine_per_100g || '';
-            document.getElementById('foodFats').value = food.grassi_per_100g || '';
-            document.getElementById('foodCarbs').value = food.carboidrati_per_100g || '';
-            document.getElementById('foodFiber').value = food.fibre_per_100g || '';
-            document.getElementById('foodSugars').value = food.zuccheri_per_100g || '';
-            document.getElementById('foodSodium').value = food.sodio_per_100g || '';
-            document.getElementById('foodGI').value = food.indice_glicemico || '';
+
+            document.getElementById('foodName').value = food.nome || '';
+            document.getElementById('foodCategory').value = food.categoria || categoryId;
+            document.getElementById('foodPortion').value = food.porzione_standard || '';
+            document.getElementById('foodCalories').value = food.calorie_per_100g ?? '';
+            document.getElementById('foodProteins').value = food.proteine_per_100g ?? '';
+            document.getElementById('foodFats').value = food.grassi_per_100g ?? '';
+            document.getElementById('foodCarbs').value = food.carboidrati_per_100g ?? '';
+            document.getElementById('foodFiber').value = food.fibre_per_100g ?? '';
+            document.getElementById('foodSugars').value = food.zuccheri_per_100g ?? '';
+            document.getElementById('foodSodium').value = food.sodio_per_100g ?? '';
+            document.getElementById('foodGI').value = food.indice_glicemico ?? '';
             
             document.getElementById('foodModal').classList.add('active');
             updateMacroValidation();
             updatePortionValues();
         }
 
-        // Validazione macronutrienti
+        // Validazione macro
         function updateMacroValidation() {
             const proteins = parseFloat(document.getElementById('foodProteins').value) || 0;
-            const fats = parseFloat(document.getElementById('foodFats').value) || 0;
-            const carbs = parseFloat(document.getElementById('foodCarbs').value) || 0;
+            const fats     = parseFloat(document.getElementById('foodFats').value) || 0;
+            const carbs    = parseFloat(document.getElementById('foodCarbs').value) || 0;
             const calories = parseFloat(document.getElementById('foodCalories').value) || 0;
 
-            const validation = validateMacroCalories(calories, proteins, fats, carbs);
-            const percentages = calculateMacroPercentages(calories, proteins, fats, carbs);
+            const validation  = DietUtils.validateMacroCalories(calories, proteins, fats, carbs);
+            const percentages = DietUtils.calculateMacroPercentages(calories, proteins, fats, carbs);
 
-            // Aggiorna display
             document.getElementById('macroProtein').textContent = percentages.proteins;
-            document.getElementById('macroFat').textContent = percentages.fats;
-            document.getElementById('macroCarb').textContent = percentages.carbs;
-            document.getElementById('macroTotal').textContent = (
-                parseFloat(percentages.proteins) + 
-                parseFloat(percentages.fats) + 
-                parseFloat(percentages.carbs)
+            document.getElementById('macroFat').textContent     = percentages.fats;
+            document.getElementById('macroCarb').textContent    = percentages.carbs;
+            document.getElementById('macroTotal').textContent   = (
+                parseFloat(percentages.proteins) + parseFloat(percentages.fats) + parseFloat(percentages.carbs)
             ).toFixed(1);
 
             const validationEl = document.getElementById('macroValidation');
-            const warningEl = document.getElementById('macroWarning');
+            const warningEl    = document.getElementById('macroWarning');
 
-            if (calories === 0) {
+            if (!calories) {
                 validationEl.innerHTML = '<span style="color: var(--text-secondary);">Inserisci le calorie</span>';
                 warningEl.style.display = 'none';
             } else if (validation.isValid) {
@@ -473,10 +406,10 @@
             }
         }
 
-        // Calcola valori per porzione
+        // Valori per porzione
         function updatePortionValues() {
             const portion = parseFloat(document.getElementById('foodPortion').value) || 0;
-            const values = calculateNutritionForPortion({
+            const values = DietUtils.calculateNutritionForPortion({
                 calorie_per_100g: parseFloat(document.getElementById('foodCalories').value) || 0,
                 proteine_per_100g: parseFloat(document.getElementById('foodProteins').value) || 0,
                 grassi_per_100g: parseFloat(document.getElementById('foodFats').value) || 0,
@@ -485,18 +418,19 @@
                 zuccheri_per_100g: parseFloat(document.getElementById('foodSugars').value) || 0
             }, portion);
 
-            document.getElementById('portionCalories').textContent = formatNumber(values.calories);
-            document.getElementById('portionProteins').textContent = formatNumber(values.proteins);
-            document.getElementById('portionFats').textContent = formatNumber(values.fats);
-            document.getElementById('portionCarbs').textContent = formatNumber(values.carbs);
-            document.getElementById('portionFiber').textContent = formatNumber(values.fiber);
-            document.getElementById('portionSugars').textContent = formatNumber(values.sugars);
+            const fmt = (n)=> Number(n||0).toLocaleString('it-IT', { maximumFractionDigits: 1 });
+            document.getElementById('portionCalories').textContent = fmt(values.calories);
+            document.getElementById('portionProteins').textContent = fmt(values.proteins);
+            document.getElementById('portionFats').textContent     = fmt(values.fats);
+            document.getElementById('portionCarbs').textContent    = fmt(values.carbs);
+            document.getElementById('portionFiber').textContent    = fmt(values.fiber);
+            document.getElementById('portionSugars').textContent   = fmt(values.sugars);
         }
 
         // Salva alimento
         function saveFood() {
             const formData = {
-                nome: document.getElementById('foodName').value,
+                nome: (document.getElementById('foodName').value || '').trim(),
                 categoria: document.getElementById('foodCategory').value,
                 porzione_standard: parseFloat(document.getElementById('foodPortion').value),
                 calorie_per_100g: parseFloat(document.getElementById('foodCalories').value),
@@ -510,41 +444,40 @@
                 unita_misura: 'g'
             };
 
-            // Valida dati
-            const validation = validateFoodData(formData);
-            if (!validation.isValid) {
-                showNotification(validation.errors.join('\n'), 'error');
-                return;
-            }
+            // Validazioni minime
+            const errors = [];
+            if (!formData.nome) errors.push('Inserisci il nome.');
+            if (!formData.categoria) errors.push('Seleziona la categoria.');
+            if (!Number.isFinite(formData.porzione_standard) || formData.porzione_standard <= 0) errors.push('Porzione standard non valida.');
+            ['calorie_per_100g','proteine_per_100g','grassi_per_100g','carboidrati_per_100g'].forEach(k=>{
+                if (!Number.isFinite(formData[k])) errors.push(`Valore mancante o non valido: ${k.replace('_',' ')}`);
+            });
+            if (errors.length){ showNotification(errors.join('\n'), 'error'); return; }
 
+            // Edit esistente
             if (currentEditingFood) {
-                // Modifica alimento esistente
                 const { categoryId, foodId } = currentEditingFood;
-                const foodIndex = currentDatabase.categorie[categoryId].alimenti.findIndex(f => f.id === foodId);
-                if (foodIndex !== -1) {
-                    currentDatabase.categorie[categoryId].alimenti[foodIndex] = {
-                        ...currentDatabase.categorie[categoryId].alimenti[foodIndex],
-                        ...formData
+                const arr = currentDatabase.categorie[categoryId].alimenti || [];
+                const idx = arr.findIndex(f => f.id === foodId);
+                if (idx !== -1) {
+                    currentDatabase.categorie[categoryId].alimenti[idx] = {
+                        ...currentDatabase.categorie[categoryId].alimenti[idx],
+                        ...formData,
+                        categoria: formData.categoria
                     };
                 }
             } else {
-                // Aggiungi nuovo alimento
+                // Nuovo alimento
                 const id = formData.nome.toLowerCase().replace(/\s+/g, '_') + '_' + Date.now();
-                const newFood = {
-                    id,
-                    ...formData,
-                    tipo: formData.categoria
-                };
-                
+                const newFood = { id, ...formData, tipo: formData.categoria };
                 if (!currentDatabase.categorie[formData.categoria]) {
-                    showNotification('Categoria non valida', 'error');
-                    return;
+                    showNotification('Categoria non valida', 'error'); return;
                 }
-                
-                currentDatabase.categorie[formData.categoria].alimenti.push(newFood);
+                (currentDatabase.categorie[formData.categoria].alimenti ||= []).push(newFood);
             }
 
-            saveDatabase();
+            // Persisti
+            localStorage.setItem('dietaDB', JSON.stringify(currentDatabase));
             closeFoodModal();
             renderCategories();
             showNotification(currentEditingFood ? 'Alimento modificato con successo!' : 'Alimento aggiunto con successo!');
@@ -552,13 +485,12 @@
 
         // Elimina alimento
         function deleteFood(categoryId, foodId) {
-            if (confirm('Sei sicuro di voler eliminare questo alimento?')) {
-                currentDatabase.categorie[categoryId].alimenti = 
-                    currentDatabase.categorie[categoryId].alimenti.filter(f => f.id !== foodId);
-                saveDatabase();
-                renderCategories();
-                showNotification('Alimento eliminato con successo!');
-            }
+            if (!confirm('Sei sicuro di voler eliminare questo alimento?')) return;
+            const arr = currentDatabase.categorie[categoryId].alimenti || [];
+            currentDatabase.categorie[categoryId].alimenti = arr.filter(f => f.id !== foodId);
+            localStorage.setItem('dietaDB', JSON.stringify(currentDatabase));
+            renderCategories();
+            showNotification('Alimento eliminato con successo!');
         }
 
         // Salva tutte le modifiche
@@ -566,11 +498,13 @@
             localStorage.setItem('dietaDB', JSON.stringify(currentDatabase));
             showNotification('Tutte le modifiche sono state salvate!');
         }
+    </script>
 
-        // Override funzione saveDatabase per usare currentDatabase
-        function saveDatabase() {
-            localStorage.setItem('dietaDB', JSON.stringify(currentDatabase));
-        }
+    <!-- Registrazione Service Worker: alla fine e con path corretta -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => navigator.serviceWorker.register('../sw.js'));
+      }
     </script>
 </body>
 </html>
